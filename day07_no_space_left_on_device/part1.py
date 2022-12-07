@@ -12,19 +12,36 @@ class Directory:
     files: set["File"] = field(default_factory=set)
     directories: dict[str, "Directory"] = field(default_factory=dict)
 
-    @lru_cache
-    def get_absolute_path(self, suffix_path: Path = Path("")):
-        if self.parent_directory is None:
-            return Path("/") / suffix_path
+    _size: int = 0
 
-        extended_suffix = Path(self.name) / suffix_path
-        return self.parent_directory.get_absolute_path(extended_suffix)
+    # @lru_cache
+    # def get_absolute_path(self, suffix_path: Path = Path("")):
+    #     if self.parent_directory is None:
+    #         return Path("/") / suffix_path
+    #
+    #     extended_suffix = Path(self.name) / suffix_path
+    #     return self.parent_directory.get_absolute_path(extended_suffix)
+
+    def get_size(self):
+        # !Caution!
+        #   this method should only be used after the whole file system was parsed. The cached
+        #   value doesn't change once it was computed.
+        if self._size:
+            return self._size
+
+        size_of_files = sum([file.size for file in self.files])
+        size_of_directories = sum([sub_dir.get_size() for sub_dir in self.directories.values()])
+        self._size = size_of_files + size_of_directories
+        return self._size
 
 
 @dataclass(frozen=True)
 class File:
     name: str
     size: int
+
+
+DIRECTORIES = list()
 
 
 def main():
@@ -34,13 +51,13 @@ def main():
 
 
 def process_file(f):
-    root = build_file_system(f)
-    build_size_mapping(root)
-    return "NOT READY"
+    build_file_system(f)
+    return compute_answer()
 
 
 def build_file_system(f):
     root = Directory(name="/", parent_directory=None)
+    DIRECTORIES.append(root)
 
     current_directory = root
     for line in f.readlines():
@@ -69,6 +86,7 @@ def build_file_system(f):
             name = part2
             sub_dir = Directory(name=name, parent_directory=current_directory)
             current_directory.directories[name] = sub_dir
+            DIRECTORIES.append(sub_dir)
         else:
             size, name = part1, part2
             # entry is a file
@@ -80,11 +98,13 @@ def build_file_system(f):
 
             file_ = File(name=name, size=size)
             current_directory.files.add(file_)
-    return root
 
 
-def build_size_mapping(root):
-    ...
+def compute_answer():
+    limit = 100_000
+    dirs_and_sizes = [(dir_, dir_.get_size()) for dir_ in DIRECTORIES]
+    small_dir_sizes = [size for (dir_, size) in dirs_and_sizes if size <= limit]
+    return sum(small_dir_sizes)
 
 
 if __name__ == '__main__':
