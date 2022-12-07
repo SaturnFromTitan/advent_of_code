@@ -43,8 +43,8 @@ def main():
 
 
 def process_file(f):
-    build_file_system(f)
-    return compute_answer()
+    root = build_file_system(f)
+    return compute_answer(root)
 
 
 def build_file_system(f):
@@ -90,13 +90,23 @@ def build_file_system(f):
 
             file_ = File(name=name, size=size)
             current_directory.files.add(file_)
+    return root
 
 
-def compute_answer():
-    limit = 100_000
+def compute_answer(root):
+    total_space = 70_000_000
+    update_space = 30_000_000
+    total_used_space = root.get_size()
+    currently_unused_space = total_space - total_used_space
+    needed_space = update_space - currently_unused_space
+    assert needed_space > 0
+
     dirs_and_sizes = [(dir_, dir_.get_size()) for dir_ in DIRECTORIES]
-    small_dir_sizes = [size for (dir_, size) in dirs_and_sizes if size <= limit]
-    return sum(small_dir_sizes)
+    sorted_dirs_and_sizes = sorted(dirs_and_sizes, key=lambda x: x[1])
+    for dir_, size in sorted_dirs_and_sizes:
+        if size >= needed_space:
+            return size
+    raise ValueError("Didn't find a directory that's large enough")
 
 
 if __name__ == '__main__':
