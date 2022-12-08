@@ -1,13 +1,11 @@
-from typing import Iterable
-
 Location = tuple[int, int]
 Matrix = list[list[int]]
 
 
 def main():
     matrix = parse_file()
-    horizontal_visibles = process_horizontally(matrix)
-    vertical_visibles = process_horizontally(transpose(matrix))
+    horizontal_visibles = process_horizontally(matrix, transposed=False)
+    vertical_visibles = process_horizontally(matrix, transposed=True)
     answer = len(horizontal_visibles | vertical_visibles)
     print(f"THE ANSWER IS: {answer}")
 
@@ -21,16 +19,22 @@ def parse_file() -> Matrix:
     return matrix
 
 
-def transpose(matrix: Matrix) -> Matrix:
-    return list(map(list, zip(*matrix)))
+def process_horizontally(matrix: Matrix, transposed: bool) -> set[Location]:
+    if transposed:
+        matrix = transpose(matrix)
 
-
-def process_horizontally(matrix: Matrix) -> set[Location]:
     visibles = set()
     for row_index, heights in enumerate(matrix):
         visibles |= check_horizontally(heights, row_index, from_left=True)
         visibles |= check_horizontally(heights, row_index, from_left=False)
+
+    if transposed:
+        return {(col, row) for (row, col) in visibles}
     return visibles
+
+
+def transpose(matrix: Matrix) -> Matrix:
+    return list(map(list, zip(*matrix)))
 
 
 def check_horizontally(heights: list[int], row_index: int, from_left: bool) -> set[Location]:
