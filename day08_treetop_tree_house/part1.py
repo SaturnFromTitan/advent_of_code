@@ -28,15 +28,22 @@ def transpose(matrix: Matrix) -> Matrix:
 def process_horizontally(matrix: Matrix) -> set[Location]:
     visibles = set()
     for row_index, heights in enumerate(matrix):
-        visibles |= check_horizontally(heights, row_index)
-        visibles |= check_horizontally(reversed(heights), row_index)
+        visibles |= check_horizontally(heights, row_index, from_left=True)
+        visibles |= check_horizontally(heights, row_index, from_left=False)
     return visibles
 
 
-def check_horizontally(heights: Iterable[int], row_index: int) -> set[Location]:
+def check_horizontally(heights: list[int], row_index: int, from_left: bool) -> set[Location]:
+    row_length = len(heights)
+    if not from_left:
+        heights = reversed(heights)
+
     visibles: set[Location] = set()
     line_max_from_left = -1
     for col_index, tree_height in enumerate(heights):
+        if not from_left:
+            col_index = row_length - col_index - 1
+
         if tree_height > line_max_from_left:
             line_max_from_left = tree_height
             visibles.add((row_index, col_index))
