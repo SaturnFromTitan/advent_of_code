@@ -38,39 +38,13 @@ class Knot:
     def follow(self, other: "Knot"):
         delta_y = other.y - self.y
         delta_x = other.x - self.x
-        if abs(delta_y) <= 1 and abs(delta_x) <= 1:
-            # head & tail are still touching
-            return
+        if abs(delta_y) > 1 or abs(delta_x) > 1:
+            self.x += self.sign(delta_x)
+            self.y += self.sign(delta_y)
 
-        # follow vertically
-        if delta_x == 0:
-            if delta_y > 0:
-                self.y += 1
-            elif delta_y < 0:
-                self.y -= 1
-            return
-
-        # follow horizontally
-        if delta_y == 0:
-            if delta_x > 0:
-                self.x += 1
-            elif delta_x < 0:
-                self.x -= 1
-            return
-
-        # follow diagonally
-        if delta_x > 0 and delta_y > 0:
-            self.x += 1
-            self.y += 1
-        elif delta_x > 0 and delta_y < 0:
-            self.x += 1
-            self.y -= 1
-        elif delta_x < 0 and delta_y < 0:
-            self.x -= 1
-            self.y -= 1
-        elif delta_x < 0 and delta_y > 0:
-            self.x -= 1
-            self.y += 1
+    @staticmethod
+    def sign(num: int):
+        return int(num > 0) - int(num < 0)
 
     def get_location(self):
         return self.x, self.y
