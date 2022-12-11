@@ -1,4 +1,4 @@
-import time
+import math
 from dataclasses import dataclass
 from functools import reduce
 from typing import Callable
@@ -94,8 +94,9 @@ MONKEYS_BY_ID = {m.id: m for m in MONKEYS}
 def main():
     inspection_counter = {m.id: 0 for m in MONKEYS}
 
-    factors = [monkey.test_divisor for monkey in MONKEYS]
-    factor = reduce((lambda x, y: x * y), factors)
+    # need a divisor that doesn't influence the remainders in all monkey's test's
+    # -> use modulo of item value with the LCM of all monkey divisor
+    factor = math.lcm(*[monkey.test_divisor for monkey in MONKEYS])
 
     for i in range(10000):
         for monkey in MONKEYS:
