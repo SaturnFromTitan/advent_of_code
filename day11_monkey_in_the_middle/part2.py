@@ -95,7 +95,8 @@ def main():
     inspection_counter = {m.id: 0 for m in MONKEYS}
 
     # need a divisor that doesn't influence the remainders in all monkey's test's
-    # -> use modulo of item value with the LCM of all monkey divisor
+    # -> use modulo of item value with the least common multiple of all monkey divisor
+    # (since all monkey divisors are prime, that's just the multiple of all divisors)
     factor = math.lcm(*[monkey.test_divisor for monkey in MONKEYS])
 
     for i in range(10000):
