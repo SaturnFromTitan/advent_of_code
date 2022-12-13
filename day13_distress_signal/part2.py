@@ -1,4 +1,5 @@
 import ast
+import functools
 import itertools
 
 
@@ -11,7 +12,7 @@ def main():
     extra2 = [[6]]
     packets += [extra1, extra2]
 
-    ordered_packets = sort(packets)
+    ordered_packets = sorted(packets, key=functools.cmp_to_key(is_ordered))
 
     # +1 because the task demands 1-based indices
     idx1 = ordered_packets.index(extra1) + 1
@@ -31,48 +32,32 @@ def parse_file(f):
     return packets
 
 
-def sort(packets):
-    sorted_packets = list()
-    for packet in packets:
-
-        inserted = False
-        for idx, temp_packet in enumerate(sorted_packets):
-            res = is_ordered(packet, temp_packet)
-            if res is None:
-                raise ValueError(f"Found two identical packets: {packet}")
-
-            if res:
-                sorted_packets.insert(idx, packet)
-                inserted = True
-                break
-        if not inserted:
-            sorted_packets.append(packet)
-    return sorted_packets
-
-
 def is_ordered(left, right):
     """Compare two packets"""
     for val1, val2 in itertools.zip_longest(left, right):
         # left is shorter than right
         if val1 is None:
-            return True
+            return -1
 
         # right is shorter than left
         if val2 is None:
-            return False
+            return 1
 
         res = _is_ordered(val1, val2)
-        if res is not None:
+        if res != 0:
             return res
-    return None
+    return 0
 
 
 def _is_ordered(val1, val2):
     """Compare two values of packets"""
     if isinstance(val1, int) and isinstance(val2, int):
         if val1 == val2:
-            return None
-        return val1 < val2
+            return 0
+        elif val1 < val2:
+            return -1
+        else:
+            return 1
 
     if isinstance(val1, int):
         val1 = [val1]
