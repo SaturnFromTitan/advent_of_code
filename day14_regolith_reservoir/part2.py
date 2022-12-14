@@ -1,4 +1,3 @@
-import functools
 import itertools
 
 
@@ -57,43 +56,38 @@ def pairwise(iterable):
 def simulate_sand_flow(rock_points: set[Point]) -> int:
     max_rock_y = max([point[1] for point in rock_points])
     bottom_y = max_rock_y + 2
+    num_rocks = len(rock_points)
 
-    sand_rest_points: set[Point] = set()
+    blocked_points = rock_points.copy()
     current_sand = SAND_SOURCE
-    while SAND_SOURCE not in sand_rest_points:
-        _is_blocked = functools.partial(
-            is_blocked,
-            rock_points=rock_points,
-            sand_rest_points=sand_rest_points,
-            bottom_y=bottom_y
-        )
-
-        if not _is_blocked((current_sand[0], current_sand[1] + 1)):
+    while SAND_SOURCE not in blocked_points:
+        if not is_blocked((current_sand[0], current_sand[1] + 1), blocked_points, bottom_y):
             # straight down
             current_sand = (current_sand[0], current_sand[1] + 1)
-        elif not _is_blocked((current_sand[0] - 1, current_sand[1] + 1)):
+        elif not is_blocked((current_sand[0] - 1, current_sand[1] + 1), blocked_points, bottom_y):
             # diagonally down left
             current_sand = (current_sand[0] - 1, current_sand[1] + 1)
-        elif not _is_blocked((current_sand[0] + 1, current_sand[1] + 1)):
+        elif not is_blocked((current_sand[0] + 1, current_sand[1] + 1), blocked_points, bottom_y):
             # diagonally down right
             current_sand = (current_sand[0] + 1, current_sand[1] + 1)
         else:
             # sand can't move, so it comes to a rest
-            sand_rest_points.add(current_sand)
+            blocked_points.add(current_sand)
             current_sand = SAND_SOURCE
-    visualise(rock_points, set(sand_rest_points))
-    return len(sand_rest_points)
+    visualise(rock_points, blocked_points)
+    return len(blocked_points) - num_rocks
 
 
-def is_blocked(point, rock_points, sand_rest_points, bottom_y):
-    blocked_points = rock_points | sand_rest_points
+def is_blocked(point, blocked_points, bottom_y):
     return (point in blocked_points) or (point[1] >= bottom_y)
 
 
-def visualise(rock_points, sand_rest_points):
-    blocked_points = rock_points | sand_rest_points | {SAND_SOURCE}
-    x_coordinates = [p[0] for p in blocked_points]
-    y_coordinates = [p[1] for p in blocked_points]
+def visualise(rock_points, blocked_points):
+    sand_rest_points = blocked_points - rock_points
+    all_points = blocked_points | {SAND_SOURCE}
+
+    x_coordinates = [p[0] for p in all_points]
+    y_coordinates = [p[1] for p in all_points]
     min_x, max_x = min(x_coordinates), max(x_coordinates)
     min_y, max_y = min(y_coordinates), max(y_coordinates)
 
