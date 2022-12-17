@@ -19,13 +19,11 @@ class Chamber:
     active_rock_anchor: Optional[Point] = field(init=False, default=None)
     width: int = field(default=7, init=False)
     solid_pieces: set[Point] = field(default_factory=set)
+    max_y: int = field(default=0, init=False)
 
     def spawn_new_rock(self):
         self.active_rock = next(self.endless_rocks)
-        self.active_rock_anchor = Point(3, self.highest_y() + 4)
-
-    def highest_y(self) -> int:
-        return max([point.y for point in self.solid_pieces], default=0)
+        self.active_rock_anchor = Point(3, self.max_y + 4)
 
     def try_shift_active_rock_sideways(self) -> bool:
         direction = next(self.endless_pushes)
@@ -66,8 +64,14 @@ class Chamber:
         return True
 
     def make_rock_solid(self):
-        active_rock_points = self.get_active_rock_points()
-        self.solid_pieces.update(list(active_rock_points))
+        active_rock_points = list(self.get_active_rock_points())
+        self.solid_pieces.update(active_rock_points)
+
+        # update max_y
+        max_y_of_new_rock = max([point.y for point in active_rock_points], default=0)
+        self.max_y = max(self.max_y, max_y_of_new_rock)
+
+        # remove active rock
         self._clean_active_rock()
 
     def _clean_active_rock(self):
@@ -100,18 +104,75 @@ ROCKS = [
 def main():
     with open("input.txt") as f:
         pushes = f.read().strip()
+    num_pushes = len(pushes)
 
-    answer = simulate(pushes)
+    # answer = simulate(pushes)
+    # print(f"THE ANSWER IS: {answer}")
+    # raise SystemExit
+
+    # The row is completely filled periodically again. Based on some trials (that can be
+    # seen in the extra prints in the 'simulate' function) I found that after an initial
+    # offset of 216 rocks / y = 325, the height difference is identical after alternating
+    # 1130 & 585 rocks (and 1750 & 863 height). With that I can compute the height after
+    # 10^12 rocks:
+    offset_rocks = 216
+    offset_height = 325
+    period_rocks = 1130 + 585  # 1715
+    period_height = 1750 + 863  # 2613
+
+    target_rocks = 10 ** 12
+    full_cycles = (target_rocks - offset_rocks) // period_rocks
+
+    # after offset_height + full_cycles * period_height rocks there's
+    # a remainder smaller than period_rocks. It can be calculated via
+    #
+    # remainder_rocks = (target_rocks - offset_rocks) % period_rocks
+    # print(remainder_rocks)
+    # push_offset = (target_rocks - remainder_rocks) % num_pushes
+    # print("PUSH OFFSET", push_offset)
+    # raise SystemExit
+    #
+    # With the simulate function we can derive how much height these
+    # extra rocks represent:
+    remainder_height = 2306
+
+    answer = offset_height + (full_cycles * period_height) + remainder_height
     print(f"THE ANSWER IS: {answer}")
+
+    # The answer is WRONG. I think the problem is that I need to take the
+    # wind push offsets into account as well. Also the rock_offset isn't
+    # divisible by 5, so that probably causes trouble as well.
+    #
+    # to be continued...
 
 
 def simulate(pushes) -> int:
+    endless_rocks = itertools.cycle(ROCKS)
+    next(endless_rocks)
+
+    endless_pushes = itertools.cycle(pushes)
+    for i in range(8867):
+        next(endless_pushes)
+
     chamber = Chamber(
         endless_rocks=itertools.cycle(ROCKS),
-        endless_pushes=itertools.cycle(pushes),
+        endless_pushes=endless_pushes,
     )
-
-    for _ in range(2022):
+    prev__row_filled = 0
+    prev__height = 0
+    for rock_counter in range(314):
+        is_row_filled = all(
+            Point(x, chamber.max_y) in chamber.solid_pieces
+            for x in range(1, chamber.width + 1)
+        )
+        if is_row_filled:
+            diff__counter = rock_counter - prev__row_filled
+            print("ROCK COUNTER", rock_counter, "--- DIFF ---", diff__counter)
+            diff__height = chamber.max_y - prev__height
+            print("HEIGHT", chamber.max_y, "--- DIFF ---", diff__height)
+            print("*" * 50)
+            prev__row_filled = rock_counter
+            prev__height = chamber.max_y
         chamber.spawn_new_rock()
 
         while chamber.active_rock:
@@ -119,16 +180,15 @@ def simulate(pushes) -> int:
             has_moved = chamber.try_shift_active_rock_down()
             if not has_moved:
                 chamber.make_rock_solid()
-    return chamber.highest_y()
+    return chamber.max_y
 
 
 def visualise(chamber):
-    max_y = chamber.highest_y()
     active_rock_points = set(chamber.get_active_rock_points())
 
     output = ""
     for y, x in itertools.product(
-        range(max_y + 10, -1, -1),
+        range(chamber.max_y + 10, -1, -1),
         range(9),
     ):
         point = Point(x, y)
