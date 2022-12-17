@@ -142,4 +142,4 @@ cython_debug/
 # custom
 .DS_Store
 .idea/
-*/input.txt
+*.txt
