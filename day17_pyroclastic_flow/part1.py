@@ -22,7 +22,7 @@ class Chamber:
 
     def spawn_new_rock(self):
         self.active_rock = next(self.endless_rocks)
-        self.active_rock_anchor = Point(2, self.highest_y() + 2)
+        self.active_rock_anchor = Point(3, self.highest_y() + 4)
 
     def highest_y(self) -> int:
         return max([point.y for point in self.solid_pieces], default=0)
@@ -100,7 +100,7 @@ ROCKS = [
 
 
 def main():
-    with open("example_input.txt") as f:
+    with open("input.txt") as f:
         pushes = f.read().strip()
 
     answer = simulate(pushes)
@@ -113,7 +113,7 @@ def simulate(pushes) -> int:
         endless_pushes=itertools.cycle(pushes),
     )
 
-    for _ in range(1):
+    for _ in range(2022):
         chamber.spawn_new_rock()
 
         while chamber.active_rock:
@@ -121,8 +121,6 @@ def simulate(pushes) -> int:
             has_moved = chamber.try_shift_active_rock_down()
             if not has_moved:
                 chamber.make_rock_solid()
-
-    visualise(chamber)
     return chamber.highest_y()
 
 
