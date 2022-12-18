@@ -104,11 +104,10 @@ ROCKS = [
 def main():
     with open("input.txt") as f:
         pushes = f.read().strip()
-    num_pushes = len(pushes)
 
-    # answer = simulate(pushes)
-    # print(f"THE ANSWER IS: {answer}")
-    # raise SystemExit
+    target_rocks = 10 ** 12
+    # answer = simulate(pushes, num_rocks=target_rocks)
+    # print(f"THE SIMULATED ANSWER IS: {answer}")
 
     # The row is completely filled periodically again. Based on some trials (that can be
     # seen in the extra prints in the 'simulate' function) I found that after an initial
@@ -117,66 +116,65 @@ def main():
     # 10^12 rocks:
     offset_rocks = 216
     offset_height = 325
+    offset_pushes = 1250
     period_rocks = 1130 + 585  # 1715
     period_height = 1750 + 863  # 2613
 
-    target_rocks = 10 ** 12
+    remainder_rocks = (target_rocks - offset_rocks) % period_rocks
     full_cycles = (target_rocks - offset_rocks) // period_rocks
 
-    # after offset_height + full_cycles * period_height rocks there's
-    # a remainder smaller than period_rocks. It can be calculated via
-    #
-    # remainder_rocks = (target_rocks - offset_rocks) % period_rocks
-    # print(remainder_rocks)
-    # push_offset = (target_rocks - remainder_rocks) % num_pushes
-    # print("PUSH OFFSET", push_offset)
-    # raise SystemExit
-    #
-    # With the simulate function we can derive how much height these
-    # extra rocks represent:
-    remainder_height = 2306
+    # now we need to calculate how much additional height is created by that offset
+    # to do this accurately, we also need to consider the offset/remainder for the next
+    # rock to spawn and which air pushes come next
+    remainder_height = simulate(
+        pushes,
+        num_rocks=remainder_rocks,
+        offset_rocks=offset_rocks,
+        offset_pushes=offset_pushes
+    )
 
     answer = offset_height + (full_cycles * period_height) + remainder_height
-    print(f"THE ANSWER IS: {answer}")
-
-    # The answer is WRONG. I think the problem is that I need to take the
-    # wind push offsets into account as well. Also the rock_offset isn't
-    # divisible by 5, so that probably causes trouble as well.
-    #
-    # to be continued...
+    print(f"THE CALCULATED ANSWER IS: {answer}")
 
 
-def simulate(pushes) -> int:
+def simulate(pushes, num_rocks, offset_rocks=0, offset_pushes=0) -> int:
     endless_rocks = itertools.cycle(ROCKS)
-    next(endless_rocks)
-
     endless_pushes = itertools.cycle(pushes)
-    for i in range(8867):
+    for _ in range(offset_rocks % len(ROCKS)):
+        next(endless_rocks)
+    for _ in range(offset_pushes % len(pushes)):
         next(endless_pushes)
 
     chamber = Chamber(
-        endless_rocks=itertools.cycle(ROCKS),
+        endless_rocks=endless_rocks,
         endless_pushes=endless_pushes,
     )
-    prev__row_filled = 0
-    prev__height = 0
-    for rock_counter in range(314):
-        is_row_filled = all(
-            Point(x, chamber.max_y) in chamber.solid_pieces
-            for x in range(1, chamber.width + 1)
-        )
-        if is_row_filled:
-            diff__counter = rock_counter - prev__row_filled
-            print("ROCK COUNTER", rock_counter, "--- DIFF ---", diff__counter)
-            diff__height = chamber.max_y - prev__height
-            print("HEIGHT", chamber.max_y, "--- DIFF ---", diff__height)
-            print("*" * 50)
-            prev__row_filled = rock_counter
-            prev__height = chamber.max_y
+    # prev__row_filled = 0
+    # prev__height = 0
+    # push_counter = 0
+    # prev__push_counter = 0
+    for rock_counter in range(num_rocks):
+        # # HOW I DETERMINED OFFSET & CYCLE SIZE
+        # is_row_filled = all(
+        #     Point(x, chamber.max_y) in chamber.solid_pieces
+        #     for x in range(1, chamber.width + 1)
+        # )
+        # if is_row_filled:
+        #     diff__counter = rock_counter - prev__row_filled
+        #     print("ROCK COUNTER", rock_counter, "--- DIFF ---", diff__counter)
+        #     diff__height = chamber.max_y - prev__height
+        #     print("HEIGHT", chamber.max_y, "--- DIFF ---", diff__height)
+        #     diff__push = push_counter - prev__push_counter
+        #     print("PUSH", push_counter, "--- DIFF ---", diff__push)
+        #     print("*" * 50)
+        #     prev__row_filled = rock_counter
+        #     prev__height = chamber.max_y
+        #     prev__push_counter = push_counter
         chamber.spawn_new_rock()
 
         while chamber.active_rock:
             chamber.try_shift_active_rock_sideways()
+            # push_counter += 1
             has_moved = chamber.try_shift_active_rock_down()
             if not has_moved:
                 chamber.make_rock_solid()
