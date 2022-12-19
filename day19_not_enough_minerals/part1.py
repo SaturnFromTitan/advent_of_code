@@ -70,25 +70,38 @@ class Garage:
 @dataclass
 class State:
     blueprint: BluePrint
-    minute: int = 0
+    minutes_passed: int = 0
     wallet: Wallet = field(default_factory=Wallet)
     garage: Garage = field(default_factory=Garage)
 
+    max_minutes: int = field(default=24, init=False)
+
     def time_is_up(self):
-        return self.minute > 24
+        return self.minutes_passed >= self.max_minutes
 
     def get_actions(self):
         blueprint = self.blueprint
 
-        yield Action.BUILD_NOTHING, Price()
-        if self.can_pay(price := blueprint.price_ore_robot):
-            yield Action.BUILD_ORE_ROBOT, price
-        if self.can_pay(price := blueprint.price_clay_robot):
-            yield Action.BUILD_CLAY_ROBOT, price
-        if self.can_pay(price := blueprint.price_obsidian_robot):
-            yield Action.BUILD_OBSIDIAN_ROBOT, price
+        # a small optimisation:
+        # If you can buy a geode robot, you should do so
         if self.can_pay(price := blueprint.price_geode_robot):
-            yield Action.BUILD_GEODE_ROBOT, price
+            return [
+                (Action.BUILD_GEODE_ROBOT, price)
+            ]
+
+        if self.minutes_passed == self.max_minutes - 1:
+            # if there's just one minute left, then only building
+            # geode robots makes a difference
+            return [(Action.BUILD_NOTHING, Price())]
+
+        actions = [(Action.BUILD_NOTHING, Price())]
+        if self.can_pay(price := blueprint.price_ore_robot):
+            actions.append((Action.BUILD_ORE_ROBOT, price))
+        if self.can_pay(price := blueprint.price_clay_robot):
+            actions.append((Action.BUILD_CLAY_ROBOT, price))
+        if self.can_pay(price := blueprint.price_obsidian_robot):
+            actions.append((Action.BUILD_OBSIDIAN_ROBOT, price))
+        return actions
 
     def can_pay(self, price):
         return (
@@ -99,7 +112,7 @@ class State:
 
 
 def main():
-    with open("input.txt") as f:
+    with open("example_input.txt") as f:
         blueprints = parse_file(f)
 
     answer = get_quality_levels(blueprints)
@@ -128,23 +141,26 @@ def parse_file(f):
 def get_quality_levels(blueprints):
     answer = 0
     for blueprint in blueprints:
-        num_geode = get_most_geode(blueprint)
+        print("BLUEPRINT:", blueprint.id)
+        num_geode = get_max_geode_score(blueprint)
         quality_level = blueprint.id * num_geode
+        print("\tquality_level:", quality_level)
         answer += quality_level
     return answer
 
 
-def get_most_geode(blueprint):
+def get_max_geode_score(blueprint):
     max_geode = 0
     start = State(blueprint=blueprint)
 
-    queue = deque([start])
+    i = 0
+    queue = [start]
     while queue:
-        state = queue.popleft()
+        i += 1
+        state = queue.pop()
 
-        if state.time_is_up():
-            max_geode = max(max_geode, state.wallet.geode)
-            continue
+        if i % 40_000 == 0:
+            print(i, max_geode)
 
         for action, price in state.get_actions():
             new_wallet = copy.deepcopy(state.wallet)
@@ -156,10 +172,14 @@ def get_most_geode(blueprint):
 
             new_state = State(
                 blueprint=state.blueprint,
-                minute=state.minute + 1,
+                minutes_passed=state.minutes_passed + 1,
                 wallet=new_wallet,
                 garage=new_garage,
             )
+            if state.time_is_up():
+                max_geode = max(max_geode, state.wallet.geode)
+                continue
+
             queue.append(new_state)
     return max_geode
 
