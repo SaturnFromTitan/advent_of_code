@@ -4,6 +4,9 @@ import re
 from dataclasses import dataclass, field
 
 
+INPUT_FILE = "input.txt"
+
+
 @dataclass
 class Price:
     ore: int = 0
@@ -83,6 +86,13 @@ class State:
 
     def get_actions(self):
         blueprint = self.blueprint
+        prices = [
+            blueprint.price_geode_robot,
+            blueprint.price_obsidian_robot,
+            blueprint.price_clay_robot,
+            blueprint.price_ore_robot,
+        ]
+        max_ore_price = max([price.ore for price in prices])
 
         if self.can_pay(price := blueprint.price_geode_robot):
             # If you can buy a geode robot, you should do so
@@ -99,11 +109,13 @@ class State:
 
         actions = [(Action.BUILD_NOTHING, Price())]
 
-        # only buy the ore robot if it pays for itself in time
-        # Note: this might not be correct for blueprints with high ore costs
-        #   should be fine for my input though...
         ore_robot_price = blueprint.price_ore_robot
-        if self.can_pay(ore_robot_price) and self.minutes_remaining() > ore_robot_price.ore:
+        if (
+            # since we can only buy one robot at a time, there's no point
+            # in producing more ore than any robot requires
+            self.garage.ore_robots < max_ore_price
+            and self.can_pay(ore_robot_price)
+        ):
             actions.append((Action.BUILD_ORE_ROBOT, ore_robot_price))
 
         if self.can_pay(price := blueprint.price_clay_robot):
@@ -119,7 +131,7 @@ class State:
 
 
 def main():
-    with open("input.txt") as f:
+    with open(INPUT_FILE) as f:
         blueprints = parse_file(f)
 
     answer = get_quality_levels(blueprints)
@@ -160,14 +172,9 @@ def get_max_geode_score(blueprint):
     max_geode = 0
     start = State(blueprint=blueprint)
 
-    i = 0
     queue = [start]
     while queue:
-        i += 1
         state = queue.pop()
-
-        if i % 100_000 == 0:
-            print(i, max_geode)
 
         for action, price in state.get_actions():
             new_wallet = copy.deepcopy(state.wallet)
