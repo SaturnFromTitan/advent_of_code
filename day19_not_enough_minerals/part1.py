@@ -1,7 +1,6 @@
 import copy
 import enum
 import re
-from collections import deque
 from dataclasses import dataclass, field
 
 
@@ -159,7 +158,7 @@ def get_max_geode_score(blueprint):
         i += 1
         state = queue.pop()
 
-        if i % 40_000 == 0:
+        if i % 100_000 == 0:
             print(i, max_geode)
 
         for action, price in state.get_actions():
@@ -176,12 +175,31 @@ def get_max_geode_score(blueprint):
                 wallet=new_wallet,
                 garage=new_garage,
             )
-            if state.time_is_up():
-                max_geode = max(max_geode, state.wallet.geode)
+            if new_state.time_is_up():
+                max_geode = max(max_geode, new_state.wallet.geode)
+                continue
+
+            upper_bound = get_upper_bound_geode_harvesting(new_state)
+            if upper_bound < max_geode:
                 continue
 
             queue.append(new_state)
     return max_geode
+
+
+def get_upper_bound_geode_harvesting(state):
+    """
+    How much geode could still be harvested, assuming we get a new geode robot
+    every minute for all the remaining time
+    """
+    remaining_minutes = state.max_minutes - state.minutes_passed
+
+    upper_bound = state.wallet.geode
+    geode_production = state.garage.geode_robots
+    for _ in range(remaining_minutes):
+        upper_bound += geode_production
+        geode_production += 1
+    return upper_bound
 
 
 if __name__ == '__main__':
