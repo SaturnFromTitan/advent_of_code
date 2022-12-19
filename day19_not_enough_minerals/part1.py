@@ -75,31 +75,39 @@ class State:
 
     max_minutes: int = field(default=24, init=False)
 
+    def minutes_remaining(self):
+        return self.max_minutes - self.minutes_passed
+
     def time_is_up(self):
         return self.minutes_passed >= self.max_minutes
 
     def get_actions(self):
         blueprint = self.blueprint
 
-        # a small optimisation:
-        # If you can buy a geode robot, you should do so
         if self.can_pay(price := blueprint.price_geode_robot):
-            return [
-                (Action.BUILD_GEODE_ROBOT, price)
-            ]
+            # If you can buy a geode robot, you should do so
+            return [(Action.BUILD_GEODE_ROBOT, price)]
 
         if self.minutes_passed == self.max_minutes - 1:
             # if there's just one minute left, then only building
             # geode robots makes a difference
             return [(Action.BUILD_NOTHING, Price())]
 
+        if self.can_pay(price := blueprint.price_obsidian_robot):
+            # If you can buy a geode robot, you should do so
+            return [(Action.BUILD_OBSIDIAN_ROBOT, price)]
+
         actions = [(Action.BUILD_NOTHING, Price())]
-        if self.can_pay(price := blueprint.price_ore_robot):
-            actions.append((Action.BUILD_ORE_ROBOT, price))
+
+        # only buy the ore robot if it pays for itself in time
+        # Note: this might not be correct for blueprints with high ore costs
+        #   should be fine for my input though...
+        ore_robot_price = blueprint.price_ore_robot
+        if self.can_pay(ore_robot_price) and self.minutes_remaining() > ore_robot_price.ore:
+            actions.append((Action.BUILD_ORE_ROBOT, ore_robot_price))
+
         if self.can_pay(price := blueprint.price_clay_robot):
             actions.append((Action.BUILD_CLAY_ROBOT, price))
-        if self.can_pay(price := blueprint.price_obsidian_robot):
-            actions.append((Action.BUILD_OBSIDIAN_ROBOT, price))
         return actions
 
     def can_pay(self, price):
@@ -111,7 +119,7 @@ class State:
 
 
 def main():
-    with open("example_input.txt") as f:
+    with open("input.txt") as f:
         blueprints = parse_file(f)
 
     answer = get_quality_levels(blueprints)
@@ -192,11 +200,9 @@ def get_upper_bound_geode_harvesting(state):
     How much geode could still be harvested, assuming we get a new geode robot
     every minute for all the remaining time
     """
-    remaining_minutes = state.max_minutes - state.minutes_passed
-
     upper_bound = state.wallet.geode
     geode_production = state.garage.geode_robots
-    for _ in range(remaining_minutes):
+    for _ in range(state.minutes_remaining()):
         upper_bound += geode_production
         geode_production += 1
     return upper_bound
