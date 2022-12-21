@@ -34,7 +34,7 @@ def parse_coordinates(text: str) -> Point:
 
 def points_from_path(path_coordinates: list[Point]) -> set[Point]:
     points = set()
-    for point1, point2 in pairwise(path_coordinates):
+    for point1, point2 in itertools.pairwise(path_coordinates):
         min_x, max_x = min(point1.x, point2.x), max(point1.x, point2.x)
         min_y, max_y = min(point1.y, point2.y), max(point1.y, point2.y)
         for x_offset, y_offset in itertools.product(
@@ -45,13 +45,6 @@ def points_from_path(path_coordinates: list[Point]) -> set[Point]:
             y = min_y + y_offset
             points.add(Point(x, y))
     return points
-
-
-def pairwise(iterable):
-    """itertools.pairwise isn't available in 3.9 yet..."""
-    a, b = itertools.tee(iterable)
-    next(b, None)
-    return zip(a, b)
 
 
 def simulate_sand_flow(rock_points: set[Point]) -> int:
