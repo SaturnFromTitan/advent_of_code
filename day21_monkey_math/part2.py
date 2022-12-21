@@ -37,36 +37,34 @@ def solve_riddle(raw_jobs):
 
 
 def find_humn_value(raw_jobs: dict[str, str], monkey_id: str, result_needed: Optional[int]) -> int:
+    if monkey_id != "root":
+        assert result_needed is not None
+
     if monkey_id == "humn":
         return result_needed
 
     raw_job = raw_jobs[monkey_id]
     monkey1_id, operator_raw, monkey2_id = raw_job.split()
 
-    failed_monkey_id = None
-    try:
-        res1 = get_result(raw_jobs, monkey1_id)
-    except ValueError:
-        res1 = None
-        failed_monkey_id = monkey1_id
+    res1 = get_result(raw_jobs, monkey1_id)
+    res2 = get_result(raw_jobs, monkey2_id)
+    failed_monkey_id = monkey1_id if res1 is None else monkey2_id
 
-    try:
-        res2 = get_result(raw_jobs, monkey2_id)
-    except ValueError:
-        res2 = None
-        failed_monkey_id = monkey2_id
-
-    if failed_monkey_id is None:
-        raise LookupError("failed_monkey_id isn't set")
-
-    if result_needed is not None:
-        result_needed = get_new_result_needed(res1, res2, result_needed, operator_raw)
-    else:
+    if monkey_id == "root":
         result_needed = res1 if res1 is not None else res2
+    else:
+        result_needed = get_new_result_needed(res1, res2, result_needed, operator_raw)
     return find_humn_value(raw_jobs, failed_monkey_id, result_needed)
 
 
-def get_result(raw_jobs: dict[str, str], monkey_id: str) -> int:
+def get_result(raw_jobs: dict[str, str], monkey_id: str) -> Optional[int]:
+    try:
+        return _get_result(raw_jobs, monkey_id)
+    except ValueError:
+        return None
+
+
+def _get_result(raw_jobs: dict[str, str], monkey_id: str) -> int:
     if monkey_id == "humn":
         raise ValueError("That's the question...")
 
@@ -77,8 +75,8 @@ def get_result(raw_jobs: dict[str, str], monkey_id: str) -> int:
     monkey1_id, operation_raw, monkey2_id = raw_job.split()
     operation = OPERATORS[operation_raw]
 
-    value1 = get_result(raw_jobs, monkey1_id)
-    value2 = get_result(raw_jobs, monkey2_id)
+    value1 = _get_result(raw_jobs, monkey1_id)
+    value2 = _get_result(raw_jobs, monkey2_id)
     return operation(value1, value2)
 
 
