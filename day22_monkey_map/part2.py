@@ -113,10 +113,10 @@ def walk_path(nodes: NodeMap, instructions):
             continue
 
         for _ in range(instruction):
-            next_node, direction = get_next_node(nodes, node, direction)
+            next_node, next_direction = get_next_node(nodes, node, direction)
             if next_node.type == NodeType.WALL:
                 break
-            node = next_node
+            node, direction = next_node, next_direction
     return node, direction
 
 
