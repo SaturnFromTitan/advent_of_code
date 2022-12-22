@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Union
 
 INPUT_FILE = "input.txt"
-
+EDGE_LENGTH = 50
 
 Location = namedtuple("Location", ["row", "col"])
 
@@ -113,7 +113,7 @@ def walk_path(nodes: NodeMap, instructions):
             continue
 
         for _ in range(instruction):
-            next_node = get_next_node(nodes, node, direction)
+            next_node, direction = get_next_node(nodes, node, direction)
             if next_node.type == NodeType.WALL:
                 break
             node = next_node
@@ -141,24 +141,130 @@ def get_next_node(nodes, node, direction):
         case _:
             raise ValueError
     if new_location in nodes:
-        return nodes[new_location]
+        return nodes[new_location], direction
 
-    # wrapping around
-    if direction in {Direction.RIGHT, Direction.DOWN}:
-        aggregate_func = min
+    # wrapping around (cube style)
+    # cube structure simplified:
+    # -----
+    # | 12|
+    # | 3 |
+    # |45 |
+    # |6  |
+    # -----
+    if direction == Direction.UP:
+        if section(current_location, horizontally=True) == 1:
+            # print(1)
+            # upper border of segment 4
+            # -> wraps to *left* border of segment 3
+            new_row = current_location.col + EDGE_LENGTH
+            new_col = 1 + EDGE_LENGTH
+            new_direction = Direction.RIGHT
+        elif section(current_location, horizontally=True) == 2:
+            # print(2)
+            # upper border of segment 1
+            # -> wraps to *left* border of segment 6
+            new_row = (current_location.col - EDGE_LENGTH) + 3 * EDGE_LENGTH
+            new_col = 1
+            new_direction = Direction.RIGHT
+        else:
+            # print(3)
+            # upper border of segment 2
+            # -> wraps to *bottom* border of segment 6
+            new_row = 4 * EDGE_LENGTH
+            new_col = current_location.col - 2 * EDGE_LENGTH
+            new_direction = Direction.UP
+    elif direction == Direction.DOWN:
+        if section(current_location, horizontally=True) == 1:
+            # print(4, current_location)
+            # lower border of segment 6
+            # -> wraps to *upper* border of segment 2
+            new_row = 1
+            new_col = current_location.col + 2 * EDGE_LENGTH
+            new_direction = Direction.DOWN
+        elif section(current_location, horizontally=True) == 2:
+            # print(5)
+            # lower border of segment 5
+            # -> wraps to *right* border of segment 6
+            new_row = (current_location.col - EDGE_LENGTH) + 3 * EDGE_LENGTH
+            new_col = EDGE_LENGTH
+            new_direction = Direction.LEFT
+        else:
+            # print(6)
+            # lower border of segment 2
+            # -> wraps to *right* border of segment 3
+            new_row = (current_location.col - 2 * EDGE_LENGTH) + EDGE_LENGTH
+            new_col = 2 * EDGE_LENGTH
+            new_direction = Direction.LEFT
+    elif direction == Direction.LEFT:
+        if section(current_location, horizontally=False) == 1:
+            # print(7)
+            # left border of segment 1
+            # -> wraps to *left* border of segment 4 (INVERSE)
+            new_row = (EDGE_LENGTH - current_location.row + 1) + 2 * EDGE_LENGTH
+            new_col = 1
+            new_direction = Direction.RIGHT
+        elif section(current_location, horizontally=False) == 2:
+            # print(8, current_location)
+            # left border of segment 3
+            # -> wraps to *top* border of segment 4
+            new_row = 1 + 2 * EDGE_LENGTH
+            new_col = (current_location.row - EDGE_LENGTH)
+            new_direction = Direction.DOWN
+        elif section(current_location, horizontally=False) == 3:
+            # print(9)
+            # left border of segment 4
+            # -> wraps to *left* border of segment 1 (INVERSE)
+            temp = current_location.row - 2 * EDGE_LENGTH
+            new_row = (EDGE_LENGTH - temp + 1)
+            new_col = 1 + EDGE_LENGTH
+            new_direction = Direction.RIGHT
+        else:
+            # print(10)
+            # left border of segment 6
+            # -> wraps to *top* border of segment 1
+            new_row = 1
+            new_col = (current_location.row - 3 * EDGE_LENGTH) + EDGE_LENGTH
+            new_direction = Direction.DOWN
     else:
-        aggregate_func = max
+        if section(current_location, horizontally=False) == 1:
+            # print(11)
+            # right border of segment 2
+            # -> wraps to *right* border of segment 5 (INVERSE)
+            new_row = (EDGE_LENGTH - current_location.row + 1) + 2 * EDGE_LENGTH
+            new_col = 2 * EDGE_LENGTH
+            new_direction = Direction.LEFT
+        elif section(current_location, horizontally=False) == 2:
+            # print(12)
+            # right border of segment 3
+            # -> wraps to *bottom* border of segment 2
+            new_row = EDGE_LENGTH
+            new_col = (current_location.row - EDGE_LENGTH) + 2 * EDGE_LENGTH
+            new_direction = Direction.UP
+        elif section(current_location, horizontally=False) == 3:
+            # print(13)
+            # right border of segment 5
+            # -> wraps to *right* border of segment 2 (INVERSE)
+            temp = current_location.row - 2 * EDGE_LENGTH
+            new_row = EDGE_LENGTH - temp + 1
+            new_col = 3 * EDGE_LENGTH
+            new_direction = Direction.LEFT
+        else:
+            # print(14)
+            # right border of segment 6
+            # -> wraps to *bottom* border of segment 5
+            new_row = 3 * EDGE_LENGTH
+            new_col = (current_location.row - 3 * EDGE_LENGTH) + EDGE_LENGTH
+            new_direction = Direction.UP
 
-    if direction in {Direction.RIGHT, Direction.LEFT}:
-        new_row = new_location.row
-        col_values = [node.col for node in nodes.values() if node.row == new_row]
-        new_col = aggregate_func(col_values)
-    else:
-        new_col = new_location.col
-        row_values = [node.row for node in nodes.values() if node.col == new_col]
-        new_row = aggregate_func(row_values)
     new_location = Location(new_row, new_col)
-    return nodes[new_location]
+    return nodes[new_location], new_direction
+
+
+def section(location: Location, horizontally: bool) -> int:
+    if horizontally:
+        return ((location.col - 1) // EDGE_LENGTH) + 1
+    else:
+        return ((location.row - 1) // EDGE_LENGTH) + 1
 
 
 if __name__ == '__main__':
