@@ -69,29 +69,18 @@ class Location:
         for i in range(start_index):
             next(endless_directions)
 
-        proposal_mapping = {proposal[0]: proposal for proposal in self._proposals()}
+        mapping = self._proposal_mapping()
         for _ in range(len(Direction)):
             direction = next(endless_directions)
-            temp_loc = self._direction_to_location(direction)
-            yield proposal_mapping[temp_loc]
+            yield mapping[direction]
 
-    def _proposals(self) -> Iterator[tuple["Location", tuple["Location", "Location"]]]:
-        yield self.north(), (self.north_west(), self.north_east())
-        yield self.south(), (self.south_west(), self.south_east())
-        yield self.west(), (self.north_west(), self.south_west())
-        yield self.east(), (self.north_east(), self.south_east())
-
-    def _direction_to_location(self, direction: Direction):
-        match direction:
-            case Direction.NORTH:
-                return self.north()
-            case Direction.EAST:
-                return self.east()
-            case Direction.SOUTH:
-                return self.south()
-            case Direction.WEST:
-                return self.west()
-        raise ValueError
+    def _proposal_mapping(self) -> dict[Direction, tuple["Location", tuple["Location", "Location"]]]:
+        return {
+            Direction.NORTH: (self.north(), (self.north_west(), self.north_east())),
+            Direction.SOUTH: (self.south(), (self.south_west(), self.south_east())),
+            Direction.WEST: (self.west(), (self.north_west(), self.south_west())),
+            Direction.EAST: (self.east(), (self.north_east(), self.south_east())),
+        }
 
 
 ElfLocations = set[Location]
