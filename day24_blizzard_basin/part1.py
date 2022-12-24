@@ -1,9 +1,9 @@
 import enum
 import itertools
-from collections import namedtuple, defaultdict
+from collections import namedtuple, deque
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Union, Iterator
+from typing import Iterator
 
 Location = namedtuple("Location", ["row", "col"])
 State = namedtuple("State", ["location", "minute"])
@@ -117,9 +117,8 @@ def _parse_dimensions(f):
 
 def walk_valley(initial_blizzards: tuple[Blizzard, ...], start: Location, target: Location) -> int:
     # walk valley with depth-first search
-    queue = [State(location=start, minute=0)]
-    seen: dict[tuple[Location, tuple[Blizzard, ...]], Union[int, float]] = defaultdict(lambda: float("inf"))
-    shortest = float('inf')
+    queue = deque([State(location=start, minute=0)])
+    seen: set[tuple[Location, tuple[Blizzard, ...]]] = set()
 
     max_blizzard_row = target.row - 1
     max_blizzard_col = target.col
@@ -128,7 +127,7 @@ def walk_valley(initial_blizzards: tuple[Blizzard, ...], start: Location, target
     while queue:
         i += 1
 
-        state = queue.pop()
+        state = queue.popleft()
         next_minute = state.minute + 1
 
         next_blizzards = get_current_blizzards(
@@ -140,46 +139,34 @@ def walk_valley(initial_blizzards: tuple[Blizzard, ...], start: Location, target
         # new states
         for new_location in neighbour_locations(state.location, blizzard_locations):
             if new_location == target:
-                shortest = min(shortest, next_minute)
-                break
+                return next_minute
 
             if state.location != start and new_location == start:
                 # disallow moving back to the start
-                # the same can be achieved by staying at the start, so this is a redundant strategy
+                # the same can be achieved by staying at the start from the beginning on,
+                # so this is a redundant strategy
                 continue
 
-            if (
-                (
-                    new_location.col < 1
-                    or new_location.col > max_blizzard_col
-                    or new_location.row < 1
-                    or new_location.row > max_blizzard_row
-                )
-                and new_location != start
-            ):
-                # out of bounce
-                continue
-
-            if next_minute > shortest:
-                continue
-
-            # can't become a personal best anymore
-            lower_bound = next_minute + min_distance(new_location, target)
-            if lower_bound >= shortest:
+            out_of_valley = (
+                new_location.row < 1
+                or new_location.row > max_blizzard_row
+                or new_location.col < 1
+                or new_location.col > max_blizzard_col
+            )
+            if out_of_valley and new_location != start:
                 continue
 
             key = (new_location, next_blizzards)
-            when_seen = seen[key]
-            if when_seen <= next_minute:
+            if key in seen:
                 continue
-            seen[key] = min(when_seen, next_minute)
+            seen.add(key)
 
             new_state = State(new_location, minute=next_minute)
             queue.append(new_state)
 
         if i % 500 == 0:
-            print(shortest, len(queue), state.minute)
-    return shortest
+            print(state.minute, len(queue))
+    raise ValueError("Couldn't find a route through the valley")
 
 
 def neighbour_locations(location, blizzard_locations) -> Iterator[Location]:
@@ -193,10 +180,6 @@ def neighbour_locations(location, blizzard_locations) -> Iterator[Location]:
         Location(location.row + 1, location.col),  # south
     ]
     return (loc for loc in locations if loc not in blizzard_locations)
-
-
-def min_distance(location, target):
-    return abs(target.row - location.row) + abs(target.col - location.col)
 
 
 @lru_cache(maxsize=None)
