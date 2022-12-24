@@ -121,6 +121,9 @@ def walk_valley(initial_blizzards: tuple[Blizzard, ...], start: Location, target
     seen: dict[tuple[Location, tuple[Blizzard, ...]], Union[int, float]] = defaultdict(lambda: float("inf"))
     shortest = float('inf')
 
+    max_blizzard_row = target.row - 1
+    max_blizzard_col = target.col
+
     i = 0
     while queue:
         i += 1
@@ -140,22 +143,27 @@ def walk_valley(initial_blizzards: tuple[Blizzard, ...], start: Location, target
                 shortest = min(shortest, next_minute)
                 break
 
-            # out of bounce
+            if state.location != start and new_location == start:
+                # disallow moving back to the start
+                # the same can be achieved by staying at the start, so this is a redundant strategy
+                continue
+
             if (
                 (
                     new_location.col < 1
-                    or new_location.col > target.col
+                    or new_location.col > max_blizzard_col
                     or new_location.row < 1
-                    or new_location.row >= target.row
+                    or new_location.row > max_blizzard_row
                 )
                 and new_location != start
             ):
+                # out of bounce
                 continue
 
             if next_minute > shortest:
                 continue
 
-            # can't become a new personal best
+            # can't become a personal best anymore
             lower_bound = next_minute + min_distance(new_location, target)
             if lower_bound >= shortest:
                 continue
