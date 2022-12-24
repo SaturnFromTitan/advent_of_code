@@ -9,8 +9,7 @@ State = namedtuple("State", ["location", "minute"])
 
 
 def main():
-    with open("example_input.txt") as f:
-        blizzards, start, target = parse_file(f)
+    blizzards, start, target = parse_file("input.txt")
 
     answer = walk_valley(blizzards, start, target)
     print(f"THE ANSWER IS: {answer}")
@@ -31,17 +30,18 @@ class Blizzard:
     col: int
     direction: Direction
 
+    max_row: int
+    max_col: int
+    min_row: int = 1
+    min_col: int = 1
+
     def get_location(self):
         return Location(self.row, self.col)
 
     def __str__(self):
         return f"{self.direction.value} at (row={self.row}, col={self.col})"
 
-    def get_next_location(self, max_row, max_col):
-        # TODO: save max_row/max_col on the class/instance. they must be identical throughout the run
-        #   and therefore shouldn't be parameters here
-        min_row, min_col = 1, 1
-
+    def get_next_location(self):
         # one step in direction
         match self.direction:
             case Direction.UP:
@@ -60,26 +60,39 @@ class Blizzard:
                 raise ValueError
 
         # wrap around
-        if new_row < min_row:
-            new_row = max_row
-        elif new_row > max_row:
-            new_row = min_row
+        if new_row < self.min_row:
+            new_row = self.max_row
+        elif new_row > self.max_row:
+            new_row = self.min_row
 
-        if new_col < min_col:
-            new_col = max_col
-        elif new_col > max_col:
-            new_col = min_col
+        if new_col < self.min_col:
+            new_col = self.max_col
+        elif new_col > self.max_col:
+            new_col = self.min_col
 
         return Location(new_row, new_col)
 
 
-def parse_file(f) -> tuple[tuple[Blizzard, ...], Location, Location]:
+def parse_file(file_name) -> tuple[tuple[Blizzard, ...], Location, Location]:
+    with open(file_name) as f:
+        max_blizzard_row, max_blizzard_col = _parse_dimensions(f)
+
+    with open(file_name) as f:
+        blizzards = _parse_blizzards(f, max_blizzard_row, max_blizzard_col)
+
+    start = Location(row=0, col=1)
+    target = Location(row=max_blizzard_row + 1, col=max_blizzard_col)
+    return blizzards, start, target
+
+
+def _parse_blizzards(
+    f, max_blizzard_row: int, max_blizzard_col: int
+) -> tuple[Blizzard, ...]:
     blizzard_ids = itertools.count(start=1)
 
     blizzards: list[Blizzard] = list()
     for row, line in enumerate(f.readlines()):
-        line = line.replace("\n", "")
-        for col, char in enumerate(line):
+        for col, char in enumerate(line.strip()):
             if char in {"#", "."}:
                 continue
 
@@ -88,22 +101,27 @@ def parse_file(f) -> tuple[tuple[Blizzard, ...], Location, Location]:
                 row=row,
                 col=col,
                 direction=Direction(char),
+                max_row=max_blizzard_row,
+                max_col=max_blizzard_col,
             )
             blizzards.append(blizzard)
+    return tuple(blizzards)
 
-    start = Location(row=0, col=1)
-    target = Location(row=row, col=col - 1)
-    return tuple(blizzards), start, target
+
+def _parse_dimensions(f):
+    lines = f.readlines()
+    line = lines[0].strip()
+    return len(lines) - 2, len(line) - 2
 
 
 def walk_valley(initial_blizzards: tuple[Blizzard, ...], start: Location, target: Location) -> int:
     # walk valley with depth-first search
     queue = [State(location=start, minute=0)]
-    max_blizzard_row = target.row - 1
-    max_blizzard_col = target.col
     shortest = float('inf')
 
+    i = 0
     while queue:
+        i += 1
         state = queue.pop()
         if state.minute + 1 > shortest:
             continue
@@ -111,30 +129,32 @@ def walk_valley(initial_blizzards: tuple[Blizzard, ...], start: Location, target
         next_blizzards = get_current_blizzards(
             initial_blizzards,
             minute=state.minute + 1,
-            max_row=max_blizzard_row,
-            max_col=max_blizzard_col
         )
         blizzard_locations = {blizzard.get_location() for blizzard in next_blizzards}
 
         # new states
-        #   positions where I can move/stay
-        #   if state.minute + 1 > shortest -> ignore
         for new_location in neighbour_locations(state.location, blizzard_locations):
             if new_location == target:
                 shortest = min(shortest, state.minute + 1)
                 break
 
+            # out of bounce
             if (
-                new_location.col < 1
-                or new_location.col > max_blizzard_col
-                or new_location.row < 1
-                or new_location.row > max_blizzard_row
+                (
+                    new_location.col < 1
+                    or new_location.col > target.col
+                    or new_location.row < 1
+                    or new_location.row >= target.row
+                )
+                and new_location != start
             ):
-                # out of bounce
                 continue
 
             new_state = State(new_location, minute=state.minute + 1)
             queue.append(new_state)
+
+        if i % 100 == 0:
+            print(shortest, len(queue))
     return shortest
 
 
@@ -153,8 +173,6 @@ def neighbour_locations(location, blizzard_locations) -> set[Location]:
 def get_current_blizzards(
     initial_blizzards: tuple[Blizzard, ...],
     minute: int,
-    max_row: int,
-    max_col: int
 ) -> tuple[Blizzard, ...]:
     """
     recursively calculate blizzard positions, so that it doesn't have to be repeated
@@ -166,17 +184,17 @@ def get_current_blizzards(
     previous_blizzards = get_current_blizzards(
         initial_blizzards,
         minute=minute - 1,
-        max_row=max_row,
-        max_col=max_col,
     )
     new_blizzards = list()
     for blizzard in previous_blizzards:
-        new_location = blizzard.get_next_location(max_row, max_col)
+        new_location = blizzard.get_next_location()
         new_blizzard = Blizzard(
             id=blizzard.id,
             row=new_location.row,
             col=new_location.col,
-            direction=blizzard.direction
+            direction=blizzard.direction,
+            max_row=blizzard.max_row,
+            max_col=blizzard.max_col,
         )
         new_blizzards.append(new_blizzard)
     return tuple(new_blizzards)
