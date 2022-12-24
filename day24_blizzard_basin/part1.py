@@ -1,8 +1,9 @@
 import enum
 import itertools
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from dataclasses import dataclass
 from functools import lru_cache
+from typing import Union, Iterator
 
 Location = namedtuple("Location", ["row", "col"])
 State = namedtuple("State", ["location", "minute"])
@@ -117,25 +118,26 @@ def _parse_dimensions(f):
 def walk_valley(initial_blizzards: tuple[Blizzard, ...], start: Location, target: Location) -> int:
     # walk valley with depth-first search
     queue = [State(location=start, minute=0)]
+    seen: dict[tuple[Location, tuple[Blizzard, ...]], Union[int, float]] = defaultdict(lambda: float("inf"))
     shortest = float('inf')
 
     i = 0
     while queue:
         i += 1
+
         state = queue.pop()
-        if state.minute + 1 > shortest:
-            continue
+        next_minute = state.minute + 1
 
         next_blizzards = get_current_blizzards(
             initial_blizzards,
-            minute=state.minute + 1,
+            minute=next_minute,
         )
         blizzard_locations = {blizzard.get_location() for blizzard in next_blizzards}
 
         # new states
         for new_location in neighbour_locations(state.location, blizzard_locations):
             if new_location == target:
-                shortest = min(shortest, state.minute + 1)
+                shortest = min(shortest, next_minute)
                 break
 
             # out of bounce
@@ -150,26 +152,46 @@ def walk_valley(initial_blizzards: tuple[Blizzard, ...], start: Location, target
             ):
                 continue
 
-            new_state = State(new_location, minute=state.minute + 1)
+            if next_minute > shortest:
+                continue
+
+            # can't become a new personal best
+            lower_bound = next_minute + min_distance(new_location, target)
+            if lower_bound >= shortest:
+                continue
+
+            key = (new_location, next_blizzards)
+            when_seen = seen[key]
+            if when_seen <= next_minute:
+                continue
+            seen[key] = min(when_seen, next_minute)
+
+            new_state = State(new_location, minute=next_minute)
             queue.append(new_state)
 
-        if i % 100 == 0:
-            print(shortest, len(queue))
+        if i % 500 == 0:
+            print(shortest, len(queue), state.minute)
     return shortest
 
 
-def neighbour_locations(location, blizzard_locations) -> set[Location]:
-    locations = {
+def neighbour_locations(location, blizzard_locations) -> Iterator[Location]:
+    # put the most relevant directions in the bottom, since we use depth-first search
+    # -> that means these will be used first
+    locations = [
         Location(location.row, location.col),  # stay
-        Location(location.row - 1, location.col),  # north
-        Location(location.row + 1, location.col),  # south
         Location(location.row, location.col - 1),  # west
+        Location(location.row - 1, location.col),  # north
         Location(location.row, location.col + 1),  # east
-    }
-    return locations - blizzard_locations
+        Location(location.row + 1, location.col),  # south
+    ]
+    return (loc for loc in locations if loc not in blizzard_locations)
 
 
-@lru_cache()
+def min_distance(location, target):
+    return abs(target.row - location.row) + abs(target.col - location.col)
+
+
+@lru_cache(maxsize=None)
 def get_current_blizzards(
     initial_blizzards: tuple[Blizzard, ...],
     minute: int,
