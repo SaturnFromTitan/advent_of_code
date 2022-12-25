@@ -2,11 +2,10 @@ import itertools
 import re
 from collections import deque
 from dataclasses import dataclass, field
-from typing import Iterator
 
 
 def main():
-    with open("example_input.txt") as f:
+    with open("input.txt") as f:
         valves = parse_file(f)
 
     # idea:
@@ -90,13 +89,14 @@ def get_shortest_valve_distance(start_id: str, end_id: str, valves: ValveMapping
     raise ValueError("Couldn't find a path connecting the two.")
 
 
-def release_most_pressure(valves: ValveMapping, shortest_distances: DistanceMapping) -> tuple[int, list[str]]:
+def release_most_pressure(valves: ValveMapping, shortest_distances: DistanceMapping) -> int:
     relevant_valves = {valve.id for valve in valves.values() if valve.flow_rate > 0}
 
+    start_valve = "AA"
     best = 0
     best_combination: list[str] = list()
 
-    start_state = State(current_valve_id="AA")
+    start_state = State(current_valve_id=start_valve)
     queue = deque([start_state])
 
     i = 0
@@ -109,45 +109,48 @@ def release_most_pressure(valves: ValveMapping, shortest_distances: DistanceMapp
         remaining_valves = remaining_reachable_valves(
             state, relevant_valves, shortest_distances
         )
-        # print(remaining_valves)
 
         # no other valves can be opened anymore. there's still time left though
         if not remaining_valves:
             total_pressure_released = state.released_pressure + state.minutes_remaining() * pressure_release_per_minute
             if total_pressure_released > best:
                 best = total_pressure_released
-                best_combination = state.opened_valves
+                best_combination = [start_valve] + state.opened_valves
             continue
 
         # open another valve
-        for next_valve_id, travel_minutes in remaining_valves:
-            extra_pressure_release_while_traveling = travel_minutes * pressure_release_per_minute
+        for next_valve_id, busy_minutes in remaining_valves:
+            pressure_released_while_traveling = busy_minutes * pressure_release_per_minute
             new_state = State(
                 current_valve_id=next_valve_id,
-                minutes_passed=state.minutes_passed + travel_minutes,
-                opened_valves=state.opened_valves + [next_valve_id],
-                released_pressure=state.released_pressure + extra_pressure_release_while_traveling,
+                minutes_passed=state.minutes_passed + busy_minutes,
+                opened_valves=state.opened_valves.copy() + [next_valve_id],
+                released_pressure=state.released_pressure + pressure_released_while_traveling,
             )
             queue.append(new_state)
 
         # print(state.minutes_passed, len(queue), best)
 
     times = [get_shortest_valve_distance(v1, v2, valves) for (v1, v2) in itertools.pairwise(best_combination)]
-    return best, best_combination, times
+    print(best_combination)
+    print(times)
+    return best
 
 
 def remaining_reachable_valves(
-        state: State, relevant_valves: set[str], shortest_distances: DistanceMapping
-) -> Iterator[tuple[str, int]]:
+    state: State, relevant_valves: set[str], shortest_distances: DistanceMapping
+) -> list[tuple[str, int]]:
     remaining_valves = relevant_valves - set(state.opened_valves)
 
     res: list[tuple[str, int]] = list()
     for next_valve_id in remaining_valves:
         key = (state.current_valve_id, next_valve_id)
         distance = shortest_distances[key]
-        if distance <= state.minutes_remaining():
-            # valve not reachable in time
-            res.append((next_valve_id, distance))
+
+        # opening the valve itself takes 1 minute as well
+        busy_minutes = distance + 1
+        if busy_minutes <= state.minutes_remaining():
+            res.append((next_valve_id, busy_minutes))
     return res
 
 
