@@ -8,11 +8,6 @@ def main():
     with open("input.txt") as f:
         valves = parse_file(f)
 
-    # idea:
-    #   1. find the shortest distance between any two valves (using BFS)
-    #   2. use BFS or DFS to find the best pressure release strategy:
-    #      I.e. an order of valves with flow rate > 0 using the distances
-    #      as edge weights.
     shortest_distances = find_shortest_distances(valves)
     answer = release_most_pressure(valves, shortest_distances)
     print(f"THE ANSWER IS: {answer}")
@@ -86,23 +81,17 @@ def get_shortest_valve_distance(start_id: str, end_id: str, valves: ValveMapping
                 return minutes_passed
 
             queue.append((next_valve, minutes_passed))
-    raise ValueError("Couldn't find a path connecting the two.")
+    raise ValueError(f"Couldn't find a path connecting '{start_id}' and '{end_id}'.")
 
 
 def release_most_pressure(valves: ValveMapping, shortest_distances: DistanceMapping) -> int:
     relevant_valves = {valve.id for valve in valves.values() if valve.flow_rate > 0}
 
-    start_valve = "AA"
-    best = 0
-    best_combination: list[str] = list()
-
-    start_state = State(current_valve_id=start_valve)
+    start_state = State(current_valve_id="AA")
     queue = deque([start_state])
 
-    i = 0
+    best = 0
     while queue:
-        i += 1
-
         state = queue.popleft()
         pressure_release_per_minute = state.pressure_release_per_minute(valves)
 
@@ -113,9 +102,7 @@ def release_most_pressure(valves: ValveMapping, shortest_distances: DistanceMapp
         # no other valves can be opened anymore. there's still time left though
         if not remaining_valves:
             total_pressure_released = state.released_pressure + state.minutes_remaining() * pressure_release_per_minute
-            if total_pressure_released > best:
-                best = total_pressure_released
-                best_combination = [start_valve] + state.opened_valves
+            best = max(best, total_pressure_released)
             continue
 
         # open another valve
@@ -124,16 +111,10 @@ def release_most_pressure(valves: ValveMapping, shortest_distances: DistanceMapp
             new_state = State(
                 current_valve_id=next_valve_id,
                 minutes_passed=state.minutes_passed + busy_minutes,
-                opened_valves=state.opened_valves.copy() + [next_valve_id],
+                opened_valves=state.opened_valves + [next_valve_id],
                 released_pressure=state.released_pressure + pressure_released_while_traveling,
             )
             queue.append(new_state)
-
-        # print(state.minutes_passed, len(queue), best)
-
-    times = [get_shortest_valve_distance(v1, v2, valves) for (v1, v2) in itertools.pairwise(best_combination)]
-    print(best_combination)
-    print(times)
     return best
 
 
