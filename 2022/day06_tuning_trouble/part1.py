@@ -1,5 +1,3 @@
-
-
 def main():
     with open("input.txt") as f:
         buffer = f.read().strip()
@@ -7,7 +5,7 @@ def main():
     idx = 0
     length = 4
     for idx in range(len(buffer)):
-        sub_buffer = buffer[idx:idx + length]
+        sub_buffer = buffer[idx : idx + length]
         unique_chars = set(sub_buffer)
         if len(unique_chars) == length:
             break
@@ -16,5 +14,5 @@ def main():
     print(f"THE ANSWER IS: {answer}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

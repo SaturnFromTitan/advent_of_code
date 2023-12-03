@@ -1,7 +1,8 @@
 import itertools
 from collections import namedtuple
+from collections.abc import Iterator
 from dataclasses import dataclass, field
-from typing import Iterator, Optional
+from typing import Optional
 
 Point = namedtuple("Point", ["x", "y"])
 
@@ -105,7 +106,7 @@ def main():
     with open("input.txt") as f:
         pushes = f.read().strip()
 
-    target_rocks = 10 ** 12
+    target_rocks = 10**12
     # answer = simulate(pushes, num_rocks=target_rocks)
     # print(f"THE SIMULATED ANSWER IS: {answer}")
 
@@ -130,7 +131,7 @@ def main():
         pushes,
         num_rocks=remainder_rocks,
         offset_rocks=offset_rocks,
-        offset_pushes=offset_pushes
+        offset_pushes=offset_pushes,
     )
 
     answer = offset_height + (full_cycles * period_height) + remainder_height
@@ -203,10 +204,10 @@ def visualise(chamber):
             output += "."
 
     line_length = chamber.width + 2
-    lines = [output[i:i + line_length] for i in range(0, len(output), line_length)]
+    lines = [output[i : i + line_length] for i in range(0, len(output), line_length)]
     for line in lines:
         print(line)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

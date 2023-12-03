@@ -1,6 +1,5 @@
 import itertools
 
-
 Point = tuple[int, int]
 
 
@@ -19,7 +18,9 @@ def parse_file(f) -> set[Point]:
     for line in f.readlines():
         line = line.strip()
 
-        path_coordinates = [parse_coordinates(pair) for pair in line.split(point_separator)]
+        path_coordinates = [
+            parse_coordinates(pair) for pair in line.split(point_separator)
+        ]
         rock_points |= points_from_path(path_coordinates)
     return rock_points
 
@@ -100,10 +101,10 @@ def visualise(rock_points, sand_rest_points):
             chars += "."
 
     line_length = max_x - min_x + 1
-    lines = [chars[i:i+line_length] for i in range(0, len(chars), line_length)]
+    lines = [chars[i : i + line_length] for i in range(0, len(chars), line_length)]
     for line in lines:
         print(line)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

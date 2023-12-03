@@ -1,5 +1,3 @@
-
-
 def main():
     with open("input.txt") as f:
         buffer = f.read().strip()
@@ -8,7 +6,7 @@ def main():
     length = 14
     is_found = False
     for idx in range(len(buffer)):
-        sub_buffer = buffer[idx:idx + length]
+        sub_buffer = buffer[idx : idx + length]
         unique_chars = set(sub_buffer)
         if len(unique_chars) == length:
             is_found = True
@@ -21,5 +19,5 @@ def main():
         print("Didn't find a a matching substring")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

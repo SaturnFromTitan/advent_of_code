@@ -1,9 +1,9 @@
 import enum
 import itertools
-from collections import namedtuple, deque
+from collections import deque, namedtuple
+from collections.abc import Iterator
 from dataclasses import dataclass
-from functools import lru_cache
-from typing import Iterator
+from functools import cache
 
 Location = namedtuple("Location", ["row", "col"])
 State = namedtuple("State", ["location", "minute"])
@@ -118,7 +118,9 @@ def _parse_dimensions(f):
     return len(lines) - 2, len(line) - 2
 
 
-def walk_valley(initial_blizzards: tuple[Blizzard, ...], start: Location, target: Location) -> tuple[int, tuple[Blizzard, ...]]:
+def walk_valley(
+    initial_blizzards: tuple[Blizzard, ...], start: Location, target: Location
+) -> tuple[int, tuple[Blizzard, ...]]:
     # walk valley with depth-first search
     queue = deque([State(location=start, minute=0)])
     seen: set[tuple[Location, tuple[Blizzard, ...]]] = set()
@@ -187,7 +189,7 @@ def neighbour_locations(location, blizzard_locations) -> Iterator[Location]:
     return (loc for loc in locations if loc not in blizzard_locations)
 
 
-@lru_cache(maxsize=None)
+@cache
 def get_current_blizzards(
     initial_blizzards: tuple[Blizzard, ...],
     minute: int,
@@ -218,5 +220,5 @@ def get_current_blizzards(
     return tuple(new_blizzards)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

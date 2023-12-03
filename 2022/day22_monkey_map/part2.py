@@ -208,14 +208,14 @@ def get_next_node(nodes, node, direction):
             # left border of segment 3
             # -> wraps to *top* border of segment 4
             new_row = 1 + 2 * EDGE_LENGTH
-            new_col = (current_location.row - EDGE_LENGTH)
+            new_col = current_location.row - EDGE_LENGTH
             new_direction = Direction.DOWN
         elif section(current_location, horizontally=False) == 3:
             # print(9)
             # left border of segment 4
             # -> wraps to *left* border of segment 1 (INVERSE)
             temp = current_location.row - 2 * EDGE_LENGTH
-            new_row = (EDGE_LENGTH - temp + 1)
+            new_row = EDGE_LENGTH - temp + 1
             new_col = 1 + EDGE_LENGTH
             new_direction = Direction.RIGHT
         else:
@@ -267,5 +267,5 @@ def section(location: Location, horizontally: bool) -> int:
         return ((location.row - 1) // EDGE_LENGTH) + 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

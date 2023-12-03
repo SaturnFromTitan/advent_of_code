@@ -25,7 +25,7 @@ def to_decimal(snafu: str) -> int:
     summed = 0
     for i, char in enumerate(snafu[::-1]):
         converted = SNAFU_MAPPING[char]
-        summed += converted * (5 ** i)
+        summed += converted * (5**i)
     return summed
 
 
@@ -41,5 +41,5 @@ def to_snafu(quotient: int) -> str:
     return "".join([str(bit) for bit in bits[::-1]])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

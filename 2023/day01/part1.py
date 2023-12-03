@@ -12,7 +12,7 @@ def main() -> None:
 def process_file(f) -> int:
     summed = 0
     for line in f.readlines():
-        line_numbers = list()
+        line_numbers = []
         for char in line:
             if char.isdigit():
                 line_numbers.append(char)

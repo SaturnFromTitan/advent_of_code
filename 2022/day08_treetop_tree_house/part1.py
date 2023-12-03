@@ -37,7 +37,9 @@ def transpose(matrix: Matrix) -> Matrix:
     return list(map(list, zip(*matrix)))
 
 
-def check_horizontally(heights: list[int], row_index: int, from_left: bool) -> set[Location]:
+def check_horizontally(
+    heights: list[int], row_index: int, from_left: bool
+) -> set[Location]:
     row_length = len(heights)
     if not from_left:
         heights = reversed(heights)
@@ -54,5 +56,5 @@ def check_horizontally(heights: list[int], row_index: int, from_left: bool) -> s
     return visibles
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

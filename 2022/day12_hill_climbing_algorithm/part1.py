@@ -1,8 +1,7 @@
 import string
-
 from collections import deque
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Iterator
 
 Location = tuple[int, int]
 NodeMapping = dict[Location, "Node"]
@@ -106,5 +105,5 @@ def find_best_path(nodes: NodeMapping, start: Node, target: Node) -> int:
     raise ValueError("Didn't find a path to 'E'")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

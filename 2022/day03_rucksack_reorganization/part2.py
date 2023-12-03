@@ -1,6 +1,5 @@
 import string
 
-
 PRIOS = {letter: index + 1 for index, letter in enumerate(string.ascii_letters)}
 
 
@@ -39,5 +38,5 @@ def determine_priority(item):
     return PRIOS[item]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

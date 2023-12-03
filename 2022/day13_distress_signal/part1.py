@@ -40,7 +40,7 @@ def is_ordered(left, right):
         # right is shorter than left
         if val2 is None:
             return False
-        
+
         res = _is_ordered(val1, val2)
         if res is not None:
             return res
@@ -62,5 +62,5 @@ def _is_ordered(val1, val2):
     return is_ordered(val1, val2)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

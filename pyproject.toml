@@ -8,6 +8,86 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.12"
 
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^3.5.0"
+ruff = "^0.1.6"
+mypy = "^1.7.1"
+
+[tool.mypy]
+# docs: https://mypy.readthedocs.io/en/stable/config_file.html
+python_version = 3.12
+allow_redefinition = false
+check_untyped_defs = true
+disallow_untyped_decorators = true
+disallow_any_explicit = false
+disallow_any_generics = false
+disallow_untyped_calls = true
+ignore_errors = false
+ignore_missing_imports = true
+implicit_reexport = false
+strict_optional = true
+strict_equality = true
+no_implicit_optional = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+warn_unreachable = true
+warn_no_return = true
+exclude = [
+    '^2022/',
+]
+
+[tool.ruff]
+show-source = true
+# list of all rules: https://docs.astral.sh/ruff/rules/
+ignore = [
+    "E501",  # line-too-long: we're fine with what black gives us
+    "F722",  # forward-annotation-syntax-error: https://github.com/PyCQA/pyflakes/issues/542
+    "PTH123",  # pathlib-open: It's ok to use open(...) instead of Pathlib(...).open()
+    "RUF001",  # ambiguous-unicode-character-string: we intentionally use non-breaking spaces etc.
+    "PT004",  # missing-fixture-name-underscore: we decide on underscores on our own
+    "PT005",  # incorrect-fixture-name-underscore: we decide on underscores on our own
+    "T201",  # print: in this project prints are ok
+]
+select = [
+    "E",
+    "F",
+    "W",
+    "G",
+    "PT",
+    "ERA",
+    "B",
+    "C90",
+    "YTT",
+    "S",
+    "A001",
+    "C4",
+    "T10",
+    "ISC",
+    "ICN",
+    "INP",
+    "PIE",
+    "T20",
+    "SIM",
+    "PTH",
+    "PGH",
+    "PL",
+    "RUF",
+    "I",
+    "UP",
+    "ARG",
+]
+target-version = "py312"
+exclude = [
+    "2022/*",
+]
+
+[tool.ruff.mccabe]
+max-complexity = 10
+
+[tool.ruff.isort]
+known-first-party = []
+known-local-folder = []
 
 [build-system]
 requires = ["poetry-core"]

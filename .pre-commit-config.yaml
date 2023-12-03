@@ -1,0 +1,36 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-format
+        name: ruff-format
+        language: system
+        entry: poetry run ruff format
+        types: [ python ]
+      - id: ruff-lint
+        name: ruff-lint
+        language: system
+        entry: poetry run ruff
+        types: [python]
+        args: [ --fix, --exit-non-zero-on-fix ]
+      - id: mypy
+        name: mypy
+        language: system
+        entry: poetry run mypy
+        types: [python]
+      - id: poetry-check
+        name: poetry-check
+        language: system
+        entry: poetry check
+        files: ^pyproject.toml$
+        pass_filenames: false
+      - id: poetry-check-lock
+        name: poetry-check-lock
+        entry: poetry check
+        language: system
+        pass_filenames: false
+        args: [ "--lock" ]
+        files: |
+          (?x)^(
+              pyproject.toml|
+              poetry.lock
+          )$

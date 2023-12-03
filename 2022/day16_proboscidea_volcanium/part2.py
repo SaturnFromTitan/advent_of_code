@@ -33,7 +33,9 @@ def main():
         valves = parse_file(f)
 
     shortest_distances = find_shortest_distances(valves)
-    sub_path_pressures = find_best_pressure_release_for_sub_paths(valves, shortest_distances)
+    sub_path_pressures = find_best_pressure_release_for_sub_paths(
+        valves, shortest_distances
+    )
     sub_path_pressures_ordered = find_best_permutation_of_sub_paths(sub_path_pressures)
     answer = find_best_combinations(sub_path_pressures_ordered)
     print(f"THE ANSWER IS: {answer}")
@@ -74,13 +76,13 @@ def parse_file(f) -> ValveMapping:
     for line in f.readlines():
         line = line.strip()
 
-        pattern = "Valve ([A-Z]+) has flow rate=(\d+); tunnels lead to valves (.+)"
+        pattern = r"Valve ([A-Z]+) has flow rate=(\d+); tunnels lead to valves (.+)"
         valve_id, flow_rate, connected_valves = re.match(pattern, line).groups()
 
         valve = Valve(
             id=valve_id,
             flow_rate=int(flow_rate),
-            connected_valves=set(connected_valves.split(", "))
+            connected_valves=set(connected_valves.split(", ")),
         )
         valves[valve_id] = valve
     return valves
@@ -88,12 +90,16 @@ def parse_file(f) -> ValveMapping:
 
 def find_shortest_distances(valves: ValveMapping) -> DistanceMapping:
     return {
-        (valve1_id, valve2_id): get_shortest_valve_distance(valve1_id, valve2_id, valves)
+        (valve1_id, valve2_id): get_shortest_valve_distance(
+            valve1_id, valve2_id, valves
+        )
         for valve1_id, valve2_id in itertools.permutations(valves.keys(), 2)
     }
 
 
-def get_shortest_valve_distance(start_id: str, end_id: str, valves: ValveMapping) -> int:
+def get_shortest_valve_distance(
+    start_id: str, end_id: str, valves: ValveMapping
+) -> int:
     """Use breath-first search to find the shortest route from start to end"""
     queue = deque([(start_id, 0)])
 
@@ -129,17 +135,23 @@ def find_best_pressure_release_for_sub_paths(
 
         # open another valve
         for next_valve_id, busy_minutes in remaining_valves:
-            pressure_released_while_traveling = busy_minutes * pressure_release_per_minute
+            pressure_released_while_traveling = (
+                busy_minutes * pressure_release_per_minute
+            )
             new_state = State(
                 current_valve_id=next_valve_id,
                 minutes_passed=state.minutes_passed + busy_minutes,
                 opened_valves=state.opened_valves + [next_valve_id],
-                released_pressure=state.released_pressure + pressure_released_while_traveling,
+                released_pressure=state.released_pressure
+                + pressure_released_while_traveling,
             )
             queue.append(new_state)
 
         # also simulate that no other valve is being opened
-        total_pressure_released = state.released_pressure + state.minutes_remaining() * pressure_release_per_minute
+        total_pressure_released = (
+            state.released_pressure
+            + state.minutes_remaining() * pressure_release_per_minute
+        )
         bests[tuple(state.opened_valves)] = total_pressure_released
     return bests
 
@@ -161,7 +173,9 @@ def remaining_reachable_valves(
     return res
 
 
-def find_best_permutation_of_sub_paths(sub_path_pressures: dict[tuple[str, ...], int]) -> dict[frozenset[str, ...], int]:
+def find_best_permutation_of_sub_paths(
+    sub_path_pressures: dict[tuple[str, ...], int]
+) -> dict[frozenset[str, ...], int]:
     bests: dict[frozenset[str, ...], int] = dict()
     for sub_path, pressure in sub_path_pressures.items():
         key = frozenset(sub_path)
@@ -185,6 +199,5 @@ def find_best_combinations(sub_path_pressures: dict[frozenset[str, ...], int]) -
     return best
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-

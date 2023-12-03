@@ -1,7 +1,6 @@
 import re
 from collections import namedtuple
 
-
 Point = namedtuple("Point", ["x", "y"])
 
 
@@ -18,7 +17,9 @@ def parse_file(f) -> tuple[dict[Point, int], set[Point]]:
     for line in f.readlines():
         line = line.strip()
 
-        groups = re.match(".+x=(-?\d+), y=(-?\d+).+x=(-?\d+), y=(-?\d+)", line).groups()
+        groups = re.match(
+            r".+x=(-?\d+), y=(-?\d+).+x=(-?\d+), y=(-?\d+)", line
+        ).groups()
         sensor_x, sensor_y, beacon_x, beacon_y = map(int, groups)
         sensor = Point(sensor_x, sensor_y)
         beacon = Point(beacon_x, beacon_y)
@@ -31,7 +32,9 @@ def manhattan_distance(p1: Point, p2: Point) -> int:
     return abs(p1.x - p2.x) + abs(p1.y - p2.y)
 
 
-def covered_points(sensor_distances: dict[Point, int], beacon_points: set[Point]) -> int:
+def covered_points(
+    sensor_distances: dict[Point, int], beacon_points: set[Point]
+) -> int:
     max_distance = max(sensor_distances.values())
     sensor_points = sensor_distances.keys()
     min_x = min([sensor.x for sensor in sensor_points])
@@ -57,5 +60,5 @@ def covered_points(sensor_distances: dict[Point, int], beacon_points: set[Point]
     return counter
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

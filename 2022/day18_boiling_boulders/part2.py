@@ -1,4 +1,4 @@
-from collections import namedtuple, deque
+from collections import deque, namedtuple
 
 Point = namedtuple("Point", ["x", "y", "z"])
 
@@ -81,5 +81,5 @@ def is_enclosed(point, lava_points):
     return True
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

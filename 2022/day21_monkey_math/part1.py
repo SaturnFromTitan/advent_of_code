@@ -1,10 +1,10 @@
 import operator
 
 OPERATIONS = {
-    '+': operator.add,
-    '-': operator.sub,
-    '*': operator.mul,
-    '/': operator.truediv,
+    "+": operator.add,
+    "-": operator.sub,
+    "*": operator.mul,
+    "/": operator.truediv,
 }
 INPUT_FILE = "input.txt"
 
@@ -37,5 +37,5 @@ def get_result(raw_jobs: dict[str, str], monkey_id: str) -> int:
     return operation(value1, value2)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

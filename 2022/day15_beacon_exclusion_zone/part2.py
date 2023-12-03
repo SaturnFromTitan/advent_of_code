@@ -1,7 +1,5 @@
-import itertools
 import re
 from collections import namedtuple
-
 
 Point = namedtuple("Point", ["x", "y"])
 
@@ -21,7 +19,9 @@ def parse_file(f) -> tuple[dict[Point, int], set[Point]]:
     for line in f.readlines():
         line = line.strip()
 
-        groups = re.match(".+x=(-?\d+), y=(-?\d+).+x=(-?\d+), y=(-?\d+)", line).groups()
+        groups = re.match(
+            r".+x=(-?\d+), y=(-?\d+).+x=(-?\d+), y=(-?\d+)", line
+        ).groups()
         sensor_x, sensor_y, beacon_x, beacon_y = map(int, groups)
         sensor = Point(sensor_x, sensor_y)
         beacon = Point(beacon_x, beacon_y)
@@ -34,7 +34,9 @@ def manhattan_distance(p1: Point, p2: Point) -> int:
     return abs(p1.x - p2.x) + abs(p1.y - p2.y)
 
 
-def find_distress_beacon(sensor_distances: dict[Point, int], beacon_points: set[Point]) -> Point:
+def find_distress_beacon(
+    sensor_distances: dict[Point, int], beacon_points: set[Point]
+) -> Point:
     relevant_points = set()
     for sensor, reach in sensor_distances.items():
         perimeter_points(sensor, reach + 1, relevant_points)
@@ -80,5 +82,5 @@ def is_in_frame(point: Point) -> bool:
     return (0 <= point.x <= 4_000_000) and (0 <= point.y <= 4_000_000)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -46,5 +46,5 @@ def generate_message():
     return message
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

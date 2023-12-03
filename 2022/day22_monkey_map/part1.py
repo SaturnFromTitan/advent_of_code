@@ -161,5 +161,5 @@ def get_next_node(nodes, node, direction):
     return nodes[new_location]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

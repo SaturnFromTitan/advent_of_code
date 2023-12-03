@@ -1,8 +1,8 @@
 import enum
 import itertools
 from collections import Counter
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Iterator
 
 INPUT_FILE = "input.txt"
 
@@ -61,7 +61,9 @@ class Location:
         yield self.south_west()
         yield self.west()
 
-    def proposals(self, start_direction: Direction) -> Iterator[tuple["Location", tuple["Location", "Location"]]]:
+    def proposals(
+        self, start_direction: Direction
+    ) -> Iterator[tuple["Location", tuple["Location", "Location"]]]:
         endless_directions = itertools.cycle(Direction)
 
         # move iterator to start_direction
@@ -74,7 +76,9 @@ class Location:
             direction = next(endless_directions)
             yield mapping[direction]
 
-    def _proposal_mapping(self) -> dict[Direction, tuple["Location", tuple["Location", "Location"]]]:
+    def _proposal_mapping(
+        self
+    ) -> dict[Direction, tuple["Location", tuple["Location", "Location"]]]:
         return {
             Direction.NORTH: (self.north(), (self.north_west(), self.north_east())),
             Direction.SOUTH: (self.south(), (self.south_west(), self.south_east())),
@@ -131,7 +135,9 @@ def simulate_round(locations: ElfLocations, direction: Direction) -> ElfLocation
 
     # move
     proposal_counter = Counter(proposals.values())
-    distinct_proposals = {proposal for (proposal, count) in proposal_counter.items() if count == 1}
+    distinct_proposals = {
+        proposal for (proposal, count) in proposal_counter.items() if count == 1
+    }
 
     new_locations: ElfLocations = set()
     for original_location in locations:
@@ -147,5 +153,5 @@ def simulate_round(locations: ElfLocations, direction: Direction) -> ElfLocation
     return new_locations
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

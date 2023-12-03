@@ -46,5 +46,5 @@ def direct_neighbours(point):
     yield Point(x - 1, y, z)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

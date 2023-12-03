@@ -15,6 +15,7 @@ SPELLED_DIGITS: dict[str, DigitChar] = {
     "eight": "8",
     "nine": "9",
 }
+SPELLED_DIGITS_REVERSED = {k[::-1]: v for (k, v) in SPELLED_DIGITS.items()}
 
 
 def main() -> None:
@@ -31,7 +32,6 @@ def process_file(f) -> int:
         last_digit = get_first_digit(line, reverse=True)
 
         row_value = int(f"{first_digit}{last_digit}")
-        print(row_value)
         summed += row_value
     return summed
 
@@ -39,14 +39,13 @@ def process_file(f) -> int:
 def get_first_digit(text: str, reverse: bool = False) -> DigitChar:
     if reverse:
         text = text[::-1]
-    for i, char in enumerate(text):
-        for spelled_digit, digit in SPELLED_DIGITS.items():
-            if reverse:
-                spelled_digit = spelled_digit[::-1]
+        digit_mapping = SPELLED_DIGITS_REVERSED
+    else:
+        digit_mapping = SPELLED_DIGITS
 
-            if char == digit:
-                return digit
-            elif text[i:i+len(spelled_digit)] == spelled_digit:
+    for i, char in enumerate(text):
+        for spelled_digit, digit in digit_mapping.items():
+            if char == digit or text[i : i + len(spelled_digit)] == spelled_digit:
                 return digit
     raise ValueError(f"Couldn't find a digit in '{text}'")
 

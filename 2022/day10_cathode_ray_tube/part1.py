@@ -45,5 +45,5 @@ def process_file(f) -> int:
     return sum(register.signal_strengths)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

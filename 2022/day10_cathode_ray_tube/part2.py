@@ -50,5 +50,5 @@ def process_file(f) -> list[str]:
     return register.outputs
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

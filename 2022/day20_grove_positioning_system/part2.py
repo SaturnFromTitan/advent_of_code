@@ -49,5 +49,5 @@ def get_grove_coordinates(numbers):
     return numbers[index1] + numbers[index2] + numbers[index3]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

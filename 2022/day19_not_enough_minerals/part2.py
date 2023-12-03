@@ -3,7 +3,6 @@ import enum
 import re
 from dataclasses import dataclass, field
 
-
 INPUT_FILE = "input.txt"
 
 
@@ -113,8 +112,7 @@ class State:
         if (
             # since we can only buy one robot at a time, there's no point
             # in producing more ore than any robot requires
-            self.garage.ore_robots < max_ore_price
-            and self.can_pay(ore_robot_price)
+            self.garage.ore_robots < max_ore_price and self.can_pay(ore_robot_price)
         ):
             actions.append((Action.BUILD_ORE_ROBOT, ore_robot_price))
 
@@ -147,15 +145,27 @@ def parse_file(f):
 
         line = line.strip()
 
-        pattern = "Blueprint (\d+): Each ore robot costs (\d+) ore. Each clay robot costs (\d+) ore. Each obsidian robot costs (\d+) ore and (\d+) clay. Each geode robot costs (\d+) ore and (\d+) obsidian."
+        pattern = r"Blueprint (\d+): Each ore robot costs (\d+) ore. Each clay robot costs (\d+) ore. Each obsidian robot costs (\d+) ore and (\d+) clay. Each geode robot costs (\d+) ore and (\d+) obsidian."
         groups = re.match(pattern, line).groups()
-        blueprint_id, ore_robot_price_ore, clay_robot_price_ore, obsidian_robot_price_ore, obsidian_robot_price_clay, geode_robot_price_ore, geode_robot_price_obsidian = map(int, groups)
+        (
+            blueprint_id,
+            ore_robot_price_ore,
+            clay_robot_price_ore,
+            obsidian_robot_price_ore,
+            obsidian_robot_price_clay,
+            geode_robot_price_ore,
+            geode_robot_price_obsidian,
+        ) = map(int, groups)
         blueprint = BluePrint(
             id=blueprint_id,
             price_ore_robot=Price(ore=ore_robot_price_ore),
             price_clay_robot=Price(ore=clay_robot_price_ore),
-            price_obsidian_robot=Price(ore=obsidian_robot_price_ore, clay=obsidian_robot_price_clay),
-            price_geode_robot=Price(ore=geode_robot_price_ore, obsidian=geode_robot_price_obsidian),
+            price_obsidian_robot=Price(
+                ore=obsidian_robot_price_ore, clay=obsidian_robot_price_clay
+            ),
+            price_geode_robot=Price(
+                ore=geode_robot_price_ore, obsidian=geode_robot_price_obsidian
+            ),
         )
         blueprints.append(blueprint)
     return blueprints
@@ -218,5 +228,5 @@ def get_upper_bound_geode_harvesting(state):
     return upper_bound
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -1,7 +1,6 @@
 import itertools
 from collections import namedtuple
 
-
 Point = namedtuple("Point", ["x", "y"])
 
 SAND_SOURCE = Point(500, 0)
@@ -22,7 +21,9 @@ def parse_file(f) -> set[Point]:
     for line in f.readlines():
         line = line.strip()
 
-        path_coordinates = [parse_coordinates(pair) for pair in line.split(point_separator)]
+        path_coordinates = [
+            parse_coordinates(pair) for pair in line.split(point_separator)
+        ]
         rock_points |= points_from_path(path_coordinates)
     return rock_points
 
@@ -55,13 +56,23 @@ def simulate_sand_flow(rock_points: set[Point]) -> int:
     blocked_points = rock_points.copy()
     current_sand = SAND_SOURCE
     while SAND_SOURCE not in blocked_points:
-        if not is_blocked(temp := Point(current_sand.x, current_sand.y + 1), blocked_points, bottom_y):
+        if not is_blocked(
+            temp := Point(current_sand.x, current_sand.y + 1), blocked_points, bottom_y
+        ):
             # straight down
             current_sand = temp
-        elif not is_blocked(temp := Point(current_sand.x - 1, current_sand.y + 1), blocked_points, bottom_y):
+        elif not is_blocked(
+            temp := Point(current_sand.x - 1, current_sand.y + 1),
+            blocked_points,
+            bottom_y,
+        ):
             # diagonally down left
             current_sand = temp
-        elif not is_blocked(temp := Point(current_sand.x + 1, current_sand.y + 1), blocked_points, bottom_y):
+        elif not is_blocked(
+            temp := Point(current_sand.x + 1, current_sand.y + 1),
+            blocked_points,
+            bottom_y,
+        ):
             # diagonally down right
             current_sand = temp
         else:
@@ -103,10 +114,10 @@ def visualise(rock_points, blocked_points):
             chars += "."
 
     line_length = max_x - min_x + 1
-    lines = [chars[i:i+line_length] for i in range(0, len(chars), line_length)]
+    lines = [chars[i : i + line_length] for i in range(0, len(chars), line_length)]
     for line in lines:
         print(line)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

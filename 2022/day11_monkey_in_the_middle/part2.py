@@ -1,7 +1,6 @@
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
-from functools import reduce
-from typing import Callable
 
 
 @dataclass
@@ -115,11 +114,13 @@ def main():
             # assumes that monkeys can't pass items to themselves
             del monkey.items[:]
 
-    sorted_monkey_activity = sorted(inspection_counter.items(), key=lambda x: x[1], reverse=True)
+    sorted_monkey_activity = sorted(
+        inspection_counter.items(), key=lambda x: x[1], reverse=True
+    )
     most_active_monkeys = sorted_monkey_activity[:2]
     answer = most_active_monkeys[0][1] * most_active_monkeys[1][1]
     print(f"THE ANSWER: {answer}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

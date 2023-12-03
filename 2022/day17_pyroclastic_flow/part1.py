@@ -1,7 +1,8 @@
 import itertools
 from collections import namedtuple
+from collections.abc import Iterator
 from dataclasses import dataclass, field
-from typing import Iterator, Optional
+from typing import Optional
 
 Point = namedtuple("Point", ["x", "y"])
 
@@ -145,10 +146,10 @@ def visualise(chamber):
             output += "."
 
     line_length = chamber.width + 2
-    lines = [output[i:i + line_length] for i in range(0, len(output), line_length)]
+    lines = [output[i : i + line_length] for i in range(0, len(output), line_length)]
     for line in lines:
         print(line)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

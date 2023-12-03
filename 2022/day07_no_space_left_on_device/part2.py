@@ -22,7 +22,9 @@ class Directory:
             return self._size
 
         size_of_files = sum([file.size for file in self.files])
-        size_of_directories = sum([sub_dir.get_size() for sub_dir in self.directories.values()])
+        size_of_directories = sum(
+            [sub_dir.get_size() for sub_dir in self.directories.values()]
+        )
         self._size = size_of_files + size_of_directories
         return self._size
 
@@ -109,5 +111,5 @@ def compute_answer(root):
     raise ValueError("Didn't find a directory that's large enough")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -85,5 +85,5 @@ def process_file(f) -> int:
     return len(tail_locations)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

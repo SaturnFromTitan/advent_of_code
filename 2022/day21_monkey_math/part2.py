@@ -36,7 +36,9 @@ def solve_riddle(raw_jobs):
     return find_humn_value(raw_jobs, "root", result_needed=None)
 
 
-def find_humn_value(raw_jobs: dict[str, str], monkey_id: str, result_needed: Optional[int]) -> int:
+def find_humn_value(
+    raw_jobs: dict[str, str], monkey_id: str, result_needed: Optional[int]
+) -> int:
     if monkey_id != "root":
         assert result_needed is not None
 

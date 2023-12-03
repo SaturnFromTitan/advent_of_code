@@ -10,7 +10,7 @@ class Position(typing.NamedTuple):
 
 
 class Number(typing.NamedTuple):
-    index: int
+    id: int
     value: int
 
 
@@ -29,21 +29,21 @@ def main() -> None:
 
 def parse_file(f) -> tuple[NumberPositions, SymbolPositions]:
     number_str = ""
-    number_positions_temp = list()
-    number_positions = dict()
-    gear_positions = list()
-    number_index = 0
+    number_positions_temp: list[Position] = []
+    number_positions = {}
+    gear_positions = []
+    number_id = 0
     for row_index, line_raw in enumerate(f.readlines()):
         line = line_raw.strip()
         for col_index, char in enumerate(line):
             # col_index == 0 check as a number can also end on line-breaks
             if number_str and (not char.isdigit() or (col_index == 0)):
-                number = Number(index=number_index, value=int(number_str))
+                number = Number(id=number_id, value=int(number_str))
                 for position_temp in number_positions_temp:
                     number_positions[position_temp] = number
                 number_str = ""
-                number_positions_temp = list()
-                number_index += 1
+                number_positions_temp = []
+                number_id += 1
 
             if char.isdigit():
                 number_str += char
@@ -58,7 +58,9 @@ def parse_file(f) -> tuple[NumberPositions, SymbolPositions]:
     return number_positions, gear_positions
 
 
-def get_gear_ratio_sum(number_positions: NumberPositions, gear_positions: SymbolPositions) -> int:
+def get_gear_ratio_sum(
+    number_positions: NumberPositions, gear_positions: SymbolPositions
+) -> int:
     return sum(
         get_gear_ratio(symbol_position, number_positions)
         for symbol_position in gear_positions
@@ -72,7 +74,7 @@ def get_gear_ratio(symbol_position: Position, number_positions: NumberPositions)
         if number:
             adjacent_numbers.add(number)
 
-    if len(adjacent_numbers) != 2:
+    if len(adjacent_numbers) != 2:  # noqa: PLR2004
         return 0
 
     first_number, second_number = list(adjacent_numbers)

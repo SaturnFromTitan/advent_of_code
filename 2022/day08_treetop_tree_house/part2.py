@@ -42,7 +42,9 @@ def transpose(matrix: Matrix) -> Matrix:
     return list(map(list, zip(*matrix)))
 
 
-def check_horizontally(heights: list[int], row_index: int, from_left: bool) -> ScoreMapping:
+def check_horizontally(
+    heights: list[int], row_index: int, from_left: bool
+) -> ScoreMapping:
     row_length = len(heights)
     if not from_left:
         heights = list(reversed(heights))
@@ -71,5 +73,5 @@ def merge_scores(scores1: ScoreMapping, scores2: ScoreMapping) -> ScoreMapping:
     return scores
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

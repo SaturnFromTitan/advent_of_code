@@ -2,10 +2,9 @@
 Now we walk backwards, i.e. starting from 'E' until we find an 'a' or 'S' node.
 """
 import string
-
 from collections import deque
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Iterator
 
 Location = tuple[int, int]
 NodeMapping = dict[Location, "Node"]
@@ -106,5 +105,5 @@ def find_best_start(nodes: NodeMapping, start: Node) -> int:
     raise ValueError("Didn't find a path to 'a' or 'S'")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

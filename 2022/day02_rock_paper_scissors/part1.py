@@ -42,9 +42,12 @@ def determine_winner(opponent_action, my_action):
         return Result.DRAW
 
     if (
-        opponent_action == Action.ROCK and my_action == Action.PAPER
-        or opponent_action == Action.PAPER and my_action == Action.SCISSORS
-        or opponent_action == Action.SCISSORS and my_action == Action.ROCK
+        opponent_action == Action.ROCK
+        and my_action == Action.PAPER
+        or opponent_action == Action.PAPER
+        and my_action == Action.SCISSORS
+        or opponent_action == Action.SCISSORS
+        and my_action == Action.ROCK
     ):
         return Result.WIN
     return Result.LOSS
@@ -60,5 +63,5 @@ def translate_input(char):
     raise ValueError(f"Received unexpected character '{char}'")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

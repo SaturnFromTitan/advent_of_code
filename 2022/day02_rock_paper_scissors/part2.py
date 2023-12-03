@@ -74,5 +74,5 @@ def choose_my_action(opponent_action, result):
     return STRENGTHS[opponent_action]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
