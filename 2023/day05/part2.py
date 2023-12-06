@@ -2,7 +2,7 @@ import dataclasses
 import itertools
 from pathlib import Path
 
-FILE_NAME = Path("example_input.txt")
+FILE_NAME = Path("input.txt")
 
 SeedBlock = tuple[int, int]
 
@@ -36,7 +36,7 @@ def main() -> None:
         seed_blocks, mapping_groups = parse_file(f)
 
     result_blocks = map_seed_blocks(seed_blocks, mapping_groups)
-    answer = min([block[0] for block in result_blocks])
+    answer = result_blocks[0][0]
     print(f"THE ANSWER IS: {answer:_}")
 
 
@@ -66,10 +66,11 @@ def map_seed_blocks(
     seed_blocks: list[SeedBlock], mapping_groups: list[MappingGroup]
 ) -> list[SeedBlock]:
     print("mapping seed blocks")
-    # print_seed_blocks(seed_blocks)
+    print_seed_blocks(seed_blocks)
     for i, mapping_group in enumerate(mapping_groups):
         seed_blocks = _map_seed_blocks(seed_blocks, mapping_group)
-        # print_seed_blocks(seed_blocks)
+        seed_blocks = merge(seed_blocks)
+        print_seed_blocks(seed_blocks)
     return seed_blocks
 
 
@@ -87,8 +88,9 @@ def _map_seed_block(
 ) -> list[SeedBlock]:
     seed_start, seed_end = seed_block
 
-    lowest_source_start = min([m.source_start for m in mapping_group.mappings])
-    highest_source_end = max([m.source_end for m in mapping_group.mappings])
+    sorted_mappings = sorted(mapping_group.mappings, key=lambda m: m.source_start)
+    lowest_source_start = sorted_mappings[0].source_start
+    highest_source_end = sorted_mappings[-1].source_end
 
     result_blocks = []
 
@@ -96,7 +98,7 @@ def _map_seed_block(
         result_blocks.append((seed_start, min(seed_end, lowest_source_start - 1)))
 
     last_source_end = lowest_source_start - 1
-    for mapping in sorted(mapping_group.mappings, key=lambda m: m.source_start):
+    for mapping in sorted_mappings:
         if seed_start > mapping.source_end:
             last_source_end = mapping.source_end
             continue
@@ -124,6 +126,36 @@ def _map_seed_block(
 
 def print_seed_blocks(blocks: list[SeedBlock]) -> None:
     print(sorted(blocks, key=lambda b: b[0]))
+
+
+def merge(blocks: list[SeedBlock]) -> list[SeedBlock]:
+    if not blocks:
+        return []
+
+    new_blocks = []
+
+    sorted_blocks = sorted(blocks, key=lambda b: b[0])
+
+    last_end = None
+    merged_block_start = None
+    for block in sorted_blocks:
+        if last_end is None:
+            merged_block_start = block[0]
+            last_end = block[1]
+            continue
+
+        if last_end + 1 < block[0]:
+            new_blocks.append((merged_block_start, last_end))
+            last_end = None
+            merged_block_start = None
+        else:
+            last_end = block[1]
+
+    if merged_block_start:
+        new_blocks.append((merged_block_start, sorted_blocks[-1][1]))
+    else:
+        new_blocks.append(block)
+    return new_blocks
 
 
 if __name__ == "__main__":
