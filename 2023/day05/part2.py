@@ -2,7 +2,9 @@ import dataclasses
 import itertools
 from pathlib import Path
 
-FILE_NAME = Path("input.txt")
+FILE_NAME = Path("example_input.txt")
+
+SeedBlock = tuple[int, int]
 
 
 @dataclasses.dataclass
@@ -11,61 +13,41 @@ class Mapping:
     source_start: int
     range: int
 
-    def is_applicable(self, value: int) -> bool:
-        return self.source_start <= value < (self.source_start + self.range)
+    @property
+    def source_end(self):
+        return self.source_start + self.range - 1
 
     @property
-    def diff(self) -> int:
-        return self.destination_start - self.source_start
+    def destination_end(self):
+        return self.destination_start + self.range - 1
 
     def map(self, value: int) -> int:
-        return value + self.diff
+        diff = self.destination_start - self.source_start
+        return value + diff
 
 
 @dataclasses.dataclass
 class MappingGroup:
     mappings: list[Mapping]
 
-    def map(self, value: int) -> int:
-        for mapping in self.mappings:
-            if mapping.is_applicable(value):
-                return mapping.map(value)
-        return value
-
 
 def main() -> None:
     with open(FILE_NAME) as f:
-        seeds, mapping_groups = parse_file(f)
+        seed_blocks, mapping_groups = parse_file(f)
 
-    for mapping_group in mapping_groups:
-        min_diff = min([mapping.diff for mapping in mapping_group.mappings])
-        print(min_diff)
-    raise SystemExit
-
-    mapped_values = seeds.copy()
-    for mapping_group in mapping_groups:
-        mapped_values = [mapping_group.map(val) for val in mapped_values]
-        print("mapping applied")
-
-    print()
-    print_nums(seeds)
-    print_nums(mapped_values)
-    diffs = [location - seed for (seed, location) in zip(seeds, mapped_values)]
-    print_nums(diffs)
-    lowest_location = min(mapped_values)
-    print(f"THE ANSWER IS: {lowest_location:_}")
+    result_blocks = map_seed_blocks(seed_blocks, mapping_groups)
+    answer = min([block[0] for block in result_blocks])
+    print(f"THE ANSWER IS: {answer:_}")
 
 
-def parse_file(f) -> tuple[list[int], list[MappingGroup]]:
+def parse_file(f) -> tuple[list[SeedBlock], list[MappingGroup]]:
     print("parsing file")
     seed_block, *mapping_blocks = f.read().split("\n\n")
 
-    # seeds = []
-    # seed_spec_numbers = [int(val) for val in seed_block.replace("seeds: ", "").split()]
-    # for seed_start, seed_range in list(itertools.pairwise(seed_spec_numbers))[::2]:
-    #     seeds.extend([seed_start, seed_start + seed_range - 1])
-    seed_start, seed_range = 1117825174, 279314434
-    seeds = [seed_start] + [seed_start + 10**i for i in range(len(str(seed_range)) + 1)]
+    seed_blocks = []
+    seed_spec_numbers = [int(val) for val in seed_block.replace("seeds: ", "").split()]
+    for seed_start, seed_range in list(itertools.pairwise(seed_spec_numbers))[::2]:
+        seed_blocks.append((seed_start, seed_start + seed_range - 1))
 
     mapping_groups = []
     for mapping_block in mapping_blocks:
@@ -77,16 +59,71 @@ def parse_file(f) -> tuple[list[int], list[MappingGroup]]:
                 Mapping(destination_start=vals[0], source_start=vals[1], range=vals[2])
             )
         mapping_groups.append(MappingGroup(mappings=mappings))
-    return seeds, mapping_groups
+    return seed_blocks, mapping_groups
 
 
-def print_nums(values: list[int]) -> None:
-    parts = [
-        f"({val1:_}, {val2:_})"
-        for (val1, val2) in list(itertools.pairwise(values))[::2]
-    ]
-    output = "[" + ", ".join(parts) + "]"
-    print(output)
+def map_seed_blocks(
+    seed_blocks: list[SeedBlock], mapping_groups: list[MappingGroup]
+) -> list[SeedBlock]:
+    print("mapping seed blocks")
+    # print_seed_blocks(seed_blocks)
+    for i, mapping_group in enumerate(mapping_groups):
+        seed_blocks = _map_seed_blocks(seed_blocks, mapping_group)
+        # print_seed_blocks(seed_blocks)
+    return seed_blocks
+
+
+def _map_seed_blocks(
+    seed_blocks: list[SeedBlock], mapping_group: MappingGroup
+) -> list[SeedBlock]:
+    result_blocks = []
+    for seed_block in seed_blocks:
+        result_blocks.extend(_map_seed_block(seed_block, mapping_group))
+    return result_blocks
+
+
+def _map_seed_block(
+    seed_block: SeedBlock, mapping_group: MappingGroup
+) -> list[SeedBlock]:
+    seed_start, seed_end = seed_block
+
+    lowest_source_start = min([m.source_start for m in mapping_group.mappings])
+    highest_source_end = max([m.source_end for m in mapping_group.mappings])
+
+    result_blocks = []
+
+    if seed_start < lowest_source_start:
+        result_blocks.append((seed_start, min(seed_end, lowest_source_start - 1)))
+
+    last_source_end = lowest_source_start - 1
+    for mapping in sorted(mapping_group.mappings, key=lambda m: m.source_start):
+        if seed_start > mapping.source_end:
+            last_source_end = mapping.source_end
+            continue
+
+        # check for "holes" in the mapping group
+        if last_source_end + 1 != mapping.source_start:
+            result_blocks.append((last_source_end + 1, mapping.source_start - 1))
+
+        if seed_end < mapping.source_start:
+            break
+
+        result_blocks.append(
+            (
+                mapping.map(max(seed_start, mapping.source_start)),
+                mapping.map(min(seed_end, mapping.source_end)),
+            )
+        )
+        last_source_end = mapping.source_end
+
+    if seed_end > highest_source_end:
+        result_blocks.append((max(seed_start, highest_source_end + 1), seed_end))
+
+    return result_blocks
+
+
+def print_seed_blocks(blocks: list[SeedBlock]) -> None:
+    print(sorted(blocks, key=lambda b: b[0]))
 
 
 if __name__ == "__main__":
