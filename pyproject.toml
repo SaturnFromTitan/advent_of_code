@@ -49,6 +49,7 @@ ignore = [
     "PT005",  # incorrect-fixture-name-underscore: we decide on underscores on our own
     "T201",  # print: in this project prints are ok
     "SIM108",  # if-else-block-instead-of-if-exp: ternary operator isn't always preferred
+    "PLR2004",  # magic-value-comparison: we're not so strict here
 ]
 select = [
     "E",

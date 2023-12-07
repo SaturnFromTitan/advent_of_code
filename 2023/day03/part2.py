@@ -74,7 +74,7 @@ def get_gear_ratio(symbol_position: Position, number_positions: NumberPositions)
         if number:
             adjacent_numbers.add(number)
 
-    if len(adjacent_numbers) != 2:  # noqa: PLR2004
+    if len(adjacent_numbers) != 2:
         return 0
 
     first_number, second_number = list(adjacent_numbers)
