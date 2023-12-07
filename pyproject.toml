@@ -48,6 +48,7 @@ ignore = [
     "PT004",  # missing-fixture-name-underscore: we decide on underscores on our own
     "PT005",  # incorrect-fixture-name-underscore: we decide on underscores on our own
     "T201",  # print: in this project prints are ok
+    "SIM108",  # if-else-block-instead-of-if-exp: ternary operator isn't always preferred
 ]
 select = [
     "E",
@@ -59,7 +60,6 @@ select = [
     "B",
     "C90",
     "YTT",
-    "S",
     "A001",
     "C4",
     "T10",
