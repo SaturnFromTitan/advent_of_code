@@ -34,7 +34,8 @@ warn_unused_configs = true
 warn_unreachable = true
 warn_no_return = true
 exclude = [
-    '^2022/',
+    "^2022/",
+    "2023/day05/part2.py",
 ]
 
 [tool.ruff]
@@ -81,6 +82,7 @@ select = [
 target-version = "py312"
 exclude = [
     "2022/*",
+    "2023/day05/part2.py",
 ]
 
 [tool.ruff.mccabe]
