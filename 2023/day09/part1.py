@@ -12,7 +12,7 @@ def main() -> None:
 
 
 def parse_file(f) -> list[list[int]]:
-    return [list(map(int, line.strip().split())) for line in f.readlines()]
+    return [[int(val) for val in line.strip().split()] for line in f.readlines()]
 
 
 def extrapolate_value(values: list[int]) -> int:
