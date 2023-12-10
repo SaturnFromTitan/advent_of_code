@@ -1,7 +1,4 @@
 import typing
-from pathlib import Path
-
-FILE_NAME = Path("input.txt")
 
 
 class Location(typing.NamedTuple):
@@ -12,8 +9,8 @@ class Location(typing.NamedTuple):
 LocationMap = dict[Location, list[Location]]
 
 
-def main() -> None:
-    with open(FILE_NAME) as f:
+def main(file_name: str) -> None:
+    with open(file_name) as f:
         location_map, start = parse_file(f)
 
     answer = walk(location_map, start)
@@ -56,13 +53,9 @@ def get_neighbour_candidates(location: Location, symbol: str) -> list[Location]:
         return [
             # going clockwise, starting at 12
             Location(row - 1, col),
-            Location(row - 1, col + 1),
             Location(row, col + 1),
-            Location(row + 1, col + 1),
             Location(row + 1, col),
-            Location(row + 1, col - 1),
             Location(row, col - 1),
-            Location(row - 1, col - 1),
         ]
     raise ValueError(f"Unexpected symbol: {symbol}")
 
@@ -94,4 +87,4 @@ def get_neighbours(location: Location, location_map: LocationMap) -> set[Locatio
 
 
 if __name__ == "__main__":
-    main()
+    main("example_input.txt")
