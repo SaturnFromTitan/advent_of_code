@@ -87,4 +87,4 @@ def get_neighbours(location: Location, location_map: LocationMap) -> set[Locatio
 
 
 if __name__ == "__main__":
-    main("example_input.txt")
+    main("input.txt")

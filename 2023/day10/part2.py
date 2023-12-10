@@ -6,6 +6,7 @@ have a connection to the outside by squeezing between the pipes.
 
 Afterwards, we can count the inner points via BFS or DFS.
 """
+import collections
 import typing
 
 
@@ -147,7 +148,7 @@ def get_connected_neighbour_candidates(  # noqa: PLR0911
 def remove_irrelevant_symbols(
     location_map: LocationMap, loop_locations: set[Location]
 ) -> None:
-    for key in location_map.keys():
+    for key in location_map.keys():  # noqa: SIM118
         if key not in loop_locations:
             location_map[key] = "."
 
@@ -155,7 +156,68 @@ def remove_irrelevant_symbols(
 def get_enclosed_locations(
     location_map: LocationMap, loop_locations: set[Location]
 ) -> set[Location]:
-    ...  # TODO
+    # TODO: refactor code to make these available after parsing the input
+    max_row = int(max(loc.row for loc in location_map))
+    max_col = int(max(loc.col for loc in location_map))
+    loop_adjacent_locations = get_locations_adjacent_to_loop(loop_locations)
+
+    enclosed_locations: set[Location] = set()
+    seen_locations: set[Location] = set()
+    for loc in loop_adjacent_locations:
+        if loc in seen_locations:
+            continue
+
+        enclosed, connected_locations = is_enclosed(
+            loc, loop_locations, max_row, max_col
+        )
+        seen_locations |= connected_locations
+        if enclosed:
+            enclosed_locations |= connected_locations
+    return enclosed_locations
+
+
+def get_locations_adjacent_to_loop(loop_locations: set[Location]) -> set[Location]:
+    adjacent_locations: set[Location] = set()
+    for loop_location in loop_locations:
+        for adjacent_location in get_adjacent_locations(loop_location):
+            if adjacent_location in loop_locations:
+                continue
+
+            adjacent_locations.add(adjacent_location)
+    return adjacent_locations
+
+
+def get_adjacent_locations(location: Location) -> typing.Iterable[Location]:
+    # going clockwise starting at 12
+    yield Location(location.row - 0.5, location.col)
+    yield Location(location.row, location.col + 0.5)
+    yield Location(location.row + 0.5, location.col)
+    yield Location(location.row, location.col - 0.5)
+
+
+def is_enclosed(
+    start: Location, loop_locations: set[Location], max_row: int, max_col: int
+) -> tuple[bool, set[Location]]:
+    """Run depth-first search to see if there's a path to the edges of the map"""
+    seen: set[Location] = set()
+    queue = collections.deque([start])
+    while queue:
+        location = queue.popleft()
+        seen.add(location)
+
+        for neighbour in get_adjacent_locations(location):
+            if (neighbour in loop_locations) or (neighbour in seen):
+                continue
+
+            if is_off_grid(neighbour, max_row, max_col):
+                return False, seen
+
+            queue.appendleft(neighbour)
+    return True, seen
+
+
+def is_off_grid(location: Location, max_row: int, max_col: int) -> bool:
+    return not (0 < location.row < max_row and 0 < location.col < max_col)
 
 
 if __name__ == "__main__":
