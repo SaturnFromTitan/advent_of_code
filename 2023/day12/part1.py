@@ -1,4 +1,5 @@
 import collections
+import time
 
 PLACEHOLDER = "?"
 
@@ -48,4 +49,6 @@ if __name__ == "__main__":
     assert get_num_solutions(".??..??...?##.", [1, 1, 3]) == 4
     print("all test cases succeeded")
 
+    start = time.monotonic()
     main("input.txt")
+    print("time elapsed:", round(time.monotonic() - start, 1))
