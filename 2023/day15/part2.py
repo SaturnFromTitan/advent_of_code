@@ -53,7 +53,7 @@ def my_hash(text: str) -> int:
 def score_boxes(filled_boxes: Boxes) -> int:
     score = 0
     for box_number in range(256):
-        lenses = filled_boxes.get(box_number, {})
+        lenses = filled_boxes[box_number]
         for index, focal_length in enumerate(lenses.values()):
             score += (box_number + 1) * (index + 1) * focal_length
     return score
