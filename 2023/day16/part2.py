@@ -107,4 +107,4 @@ def get_new_positions(
 
 
 if __name__ == "__main__":
-    main("input.txt")
+    main("example_input.txt")
