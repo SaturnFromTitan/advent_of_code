@@ -1,5 +1,8 @@
+import collections
 import enum
+import functools
 import sys
+import time
 import typing
 
 from frozendict import frozendict
@@ -14,18 +17,39 @@ Grid = frozendict[Position, int]
 
 
 class Direction(enum.StrEnum):
-    LEFT = "LEFT"
     RIGHT = "RIGHT"
-    UP = "UP"
     DOWN = "DOWN"
+    UP = "UP"
+    LEFT = "LEFT"
 
 
 class State(typing.NamedTuple):
     pos: Position
-    direction: Direction | None
-    heat: int
+    direction: Direction
     straight_counter: int
-    seen: set[tuple[Position, Direction, int]]
+
+    def __str__(self):
+        return f"State(pos=({self.pos.row}, {self.pos.col}), direction={self.direction}, straight_counter={self.straight_counter})"
+
+
+class heat_cache:
+    """Similar to `functools.cache`, but using a custom cache key"""
+
+    def __init__(self):
+        self.cache: dict = {}
+
+    def __call__(self, func: typing.Callable) -> typing.Callable:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            key: State = kwargs["start_state"]
+            if key in self.cache:
+                return self.cache[key]
+
+            result = func(*args, **kwargs)
+            self.cache[key] = result
+            return result
+
+        return wrapper
 
 
 def main(file_name: str) -> None:
@@ -47,68 +71,118 @@ def parse_file(f) -> Grid:
 
 
 def find_best_route(grid: Grid) -> int:
-    start_state = State(
-        pos=Position(0, 0), direction=None, heat=0, straight_counter=1, seen=set()
-    )
-    best_score = sys.maxsize  # a very large int number
-    return _find_best_route(grid, start_state, best_score)
+    max_row = max([pos.row for pos in grid])
+    max_col = max([pos.col for pos in grid])
+    assert max_row == max_col, "assuming quadratic grid..."
+    target = Position(max_row, max_col)
+
+    relevant_scores = []
+    for dist in range(max_row + 1):
+        for row_offset in range(dist + 1):
+            for col_offset in range(dist + 1):
+                new_pos = Position(target.row - row_offset, target.col - col_offset)
+                print(f"Finding best score from {new_pos}")
+                for _direction in Direction:
+                    direction = Direction(_direction)  # so that mypy isn't confused
+                    direction_solution = (
+                        sys.maxsize,
+                        (direction, direction, direction),
+                    )
+
+                    for straight_count in range(1, 4):
+                        temp_start_state = State(
+                            pos=new_pos,
+                            direction=direction,
+                            straight_counter=straight_count,
+                        )
+                        # the result is cached and can be reused by the next iteration
+                        if (
+                            get_num_moves_in_direction_at_start(
+                                direction_solution[1], direction
+                            )
+                            < straight_count
+                        ):
+                            solution = direction_solution
+                        else:
+                            solution = None
+                        score, moves = _find_best_route(
+                            grid=grid,
+                            start_state=temp_start_state,
+                            solution=solution,
+                        )
+                        print(f"\tscore: {score}")
+                        if score < direction_solution[0]:
+                            direction_solution = (score, moves)
+
+                        if (
+                            row_offset == max_row
+                            and col_offset == max_col
+                            and straight_count == 1
+                        ):
+                            relevant_scores.append(score)
+    return min(relevant_scores)
 
 
-def _find_best_route(grid: Grid, state: State, best_score: int) -> int:
+@heat_cache()  # type: ignore[no-untyped-call]
+def _find_best_route(
+    grid: Grid, start_state: State, solution: None | tuple[int, tuple[Direction, ...]]
+) -> tuple[int, tuple[Direction, ...]]:
+    if solution:
+        return solution
+
+    print(f"\tFinding best route for {start_state}")
+
     max_row = max([pos.row for pos in grid])
     max_col = max([pos.col for pos in grid])
     target = Position(max_row, max_col)
 
-    for new_position, new_direction, new_straight_counter in get_next_positions(
-        state.pos, state.direction, state.straight_counter, max_row, max_col
-    ):
-        new_state = State(
-            pos=new_position,
-            direction=new_direction,
-            heat=state.heat + grid[new_position],
-            straight_counter=new_straight_counter,
-            seen=state.seen.copy(),
-        )
-        if new_state.heat + distance(new_state.pos, target) >= best_score:
-            continue
+    best_score = sys.maxsize  # a very large integer
+    best_moves: tuple[Direction, ...] = ()
 
-        seen_key = (new_state.pos, new_direction, new_state.straight_counter)
-        if seen_key in state.seen:
-            continue
-        else:
-            new_state.seen.add(seen_key)
+    queue: collections.deque[
+        tuple[State, int, tuple[Direction, ...]]
+    ] = collections.deque([(start_state, 0, ())])
+    while queue:
+        state, current_score, moves = queue.popleft()
+        new_score = current_score + grid[state.pos]
+        new_moves = (*moves, state.direction)
+        if state.pos == target and new_score < best_score:
+            best_score = new_score
+            best_moves = new_moves
 
-        if new_position == target:
-            print(best_score)
-            return min(best_score, new_state.heat)
+        for new_state in get_next_positions_sorted(state):
+            if (
+                not is_on_grid(new_state.pos, max_row, max_col)
+                or new_score + grid[new_state.pos] + distance(new_state.pos, target) - 1
+                >= best_score
+            ):
+                continue
 
-        best_score = min(best_score, _find_best_route(grid, new_state, best_score))
-    return best_score
+            queue.appendleft((new_state, new_score, new_moves))
+    assert best_score < sys.maxsize, f"Didn't find a route from {start_state.pos}"
+    return best_score, best_moves
 
 
-def get_next_positions(
-    pos: Position,
-    direction: Direction | None,
-    straight_counter: int,
-    max_row: int,
-    max_col: int,
-) -> typing.Iterable[tuple[Position, Direction, int]]:
+def get_next_positions_sorted(state: State) -> list[State]:
+    # reverse as _find_best_route uses .appendleft for all directions
+    # -> the order here is reversed again
+    # FYI: I tried sorting by grid[new_state.pos] as well, but it doesn't converge well
+    return list(get_next_positions(state))[::-1]
+
+
+def get_next_positions(state: State) -> typing.Iterable[State]:
     for new_direction, new_straight_counter in get_move_candidates(
-        direction, straight_counter
+        state.direction, state.straight_counter
     ):
         offset = get_offset(new_direction)
-        new_position = Position(pos.row + offset.row, pos.col + offset.col)
-        if is_on_grid(new_position, max_row, max_col):
-            yield new_position, new_direction, new_straight_counter
+        new_position = Position(state.pos.row + offset.row, state.pos.col + offset.col)
+        yield State(new_position, new_direction, new_straight_counter)
 
 
 def get_move_candidates(
-    direction: Direction | None, straight_counter: int
+    direction: Direction, straight_counter: int
 ) -> typing.Iterable[tuple[Direction, int]]:
-    if direction is None:  # can only happen at start
-        yield Direction.RIGHT, straight_counter + 1
-        yield Direction.DOWN, straight_counter + 1
-    elif direction == Direction.RIGHT:
+    if direction == Direction.RIGHT:
         if straight_counter < 3:
             yield Direction.RIGHT, straight_counter + 1
         yield Direction.DOWN, 1
@@ -149,5 +223,22 @@ def distance(pos: Position, target: Position) -> int:
     return target.row - pos.row + target.col - pos.col
 
 
+def get_num_moves_in_direction_at_start(
+    moves: tuple[Direction, ...], direction: Direction
+) -> int:
+    moved_straight = 0
+    for move in moves:
+        if move == direction:
+            moved_straight += 1
+        else:
+            break
+
+    if moved_straight > 3:
+        raise ValueError(f"Moved too long in one direction...\n\t{moves}")
+    return moved_straight
+
+
 if __name__ == "__main__":
+    start = time.monotonic()
     main("example_input.txt")
+    print("time elapsed:", round(time.monotonic() - start, 1), "seconds")
