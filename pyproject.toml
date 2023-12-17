@@ -7,6 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
+frozendict = "^2.3.10"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.5.0"
